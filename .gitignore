@@ -1,0 +1,17 @@
+# Nested Node modules
+**/node_modules/
+
+# Nested Environment files
+**/.env
+**/.env.*
+
+# Build artifacts
+**/dist/
+**/build/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
