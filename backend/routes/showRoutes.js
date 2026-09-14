@@ -1,11 +1,11 @@
 import express from 'express';
-import { getShowsByArtForm, getShowById, createBooking } from '../controllers/showController.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { createShow, bookShowTickets, addShowReview } from '../controllers/showController.js';
+import { verifyToken, requireVerifiedArtist } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/artform/:artFormId', getShowsByArtForm);
-router.get('/:id', getShowById);
-router.post('/book', protect, createBooking);
+router.post('/', verifyToken, requireVerifiedArtist, createShow);
+router.post('/:id/book', verifyToken, bookShowTickets);
+router.post('/:id/reviews', verifyToken, addShowReview);
 
 export default router;

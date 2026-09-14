@@ -1,46 +1,16 @@
 import mongoose from 'mongoose';
 
-const showSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    artFormId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ArtForm',
-      required: true
-    },
-    artistId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Artist'
-    },
-    venue: {
-      type: String,
-      required: true
-    },
-    city: {
-      type: String,
-      required: true
-    },
-    date: {
-      type: Date,
-      required: true
-    },
-    time: {
-      type: String,
-      required: true
-    },
-    ticketPrice: {
-      type: Number,
-      default: 0
-    }
-  },
-  {
-    timestamps: true
-  }
-);
+const showSchema = new mongoose.Schema({
+  artFormId: { type: mongoose.Schema.Types.ObjectId, ref: 'ArtForm', required: true },
+  artistTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  venue: { type: String, required: true },
+  date: { type: Date, required: true },
+  ticketPrice: { type: Number, default: 0 },
+  totalTickets: { type: Number, required: true },
+  availableTickets: { type: Number, required: true },
+  isSoldOut: { type: Boolean, default: false }
+}, { timestamps: true });
 
-const Show = mongoose.model('Show', showSchema);
-export default Show;
+export default mongoose.model('Show', showSchema);
