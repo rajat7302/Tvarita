@@ -49,3 +49,8 @@ export const createExperience = async (experienceData) => {
   const response = await api.post('/experiences', experienceData);
   return response.data;
 };
+
+export const bookShowTicket = async (showId, ticketsCount = 1) => {
+  const response = await api.post(`/shows/${showId}/book`, { ticketsCount });
+  return response.data;
+};

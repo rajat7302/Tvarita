@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 
 const showSchema = new mongoose.Schema({
-  artFormId: { type: mongoose.Schema.Types.ObjectId, ref: 'ArtForm', required: true },
+  artFormId: { type: mongoose.Schema.Types.ObjectId, ref: 'ArtForm', required: false },
+  artFormName: { type: String, default: '' },
   artistTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
   description: { type: String, default: '' },

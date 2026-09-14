@@ -17,8 +17,8 @@ const userSchema = new mongoose.Schema({
     teamName: { type: String, default: '' },
     teamDescription: { type: String, default: '' },
     members: [{
-      memberName: { type: String, required: true },
-      roleInTeam: { type: String, required: true }
+      memberName: { type: String, default: '' },
+      roleInTeam: { type: String, default: '' }
     }]
   }
 }, { timestamps: true });

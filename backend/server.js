@@ -1,10 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 import connectDB from './config/db.js';
+import User from './models/User.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
+// Route Imports
 import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/adminRoutes.js'; // <-- 1. ADD THIS IMPORT
 import artFormRoutes from './routes/artFormRoutes.js';
 import artistRoutes from './routes/artistRoutes.js';
 import showRoutes from './routes/showRoutes.js';
@@ -20,6 +24,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes); // <-- 2. ADD THIS MOUNT LINE
 app.use('/api/artforms', artFormRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/shows', showRoutes);
@@ -30,12 +35,38 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Tvarita Arts API is operational' });
 });
 
+const seedAdminUser = async () => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@tvarita.com';
+    const existingAdmin = await User.findOne({ email: adminEmail });
+
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'AdminTvarita2026!', 10);
+      
+      await User.create({
+        name: 'System Admin',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin',
+        isVerifiedArtist: true
+      });
+
+      console.log(`[Admin Seed]: Admin account created successfully (${adminEmail})`);
+    } else {
+      console.log(`[Admin Seed]: Admin account already exists.`);
+    }
+  } catch (error) {
+    console.error('[Admin Seed Error]:', error.message);
+  }
+};
+
 // Error Handler Middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await seedAdminUser();
   app.listen(PORT, () => {
     console.log(`[Server Running]: Port ${PORT}`);
   });

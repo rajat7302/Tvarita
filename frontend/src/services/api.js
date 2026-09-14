@@ -11,7 +11,9 @@ const api = axios.create({
 
 // Attach JWT token automatically to requests if available
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('tvarita_token');
+  // Check both possible key names stored in localStorage
+  const token = localStorage.getItem('tvarita_token') || localStorage.getItem('token');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

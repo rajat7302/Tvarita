@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/common/NavBar';
 import api from '../services/api';
-import { ShieldCheck, Check, Trash2 } from 'lucide-react';
-
+import { ShieldCheck, Check } from 'lucide-react';
+import AdminArtistVerification from '../components/AdminArtistVerification';
 export default function AdminDashboardPage() {
   const [pendingForms, setPendingForms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +31,8 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-[#FFFDF9] text-gray-900 pb-16">
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-4 pt-8">
-        <div className="flex items-center gap-3 mb-8">
+      <main className="max-w-5xl mx-auto px-4 pt-8 space-y-8">
+        <div className="flex items-center gap-3">
           <ShieldCheck className="w-8 h-8 text-[#E65100]" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Control Center</h1>
@@ -40,6 +40,10 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* 2. Render Artist Verification Component here */}
+        <AdminArtistVerification />
+
+        {/* Pending Art Forms Section */}
         <section className="bg-white rounded-3xl border border-amber-100 p-6 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Pending Art Form Proposals</h2>
 
