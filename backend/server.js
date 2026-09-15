@@ -20,17 +20,24 @@ dotenv.config();
 const app = express();
 
 // Configured CORS for Local + Render
+// Configured CORS for Local + Render with trailing-slash safety
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://tvarita.onrender.com',
   process.env.CLIENT_URL
-];
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Normalize origins by stripping trailing slashes for comparison
+    const normalizedOrigin = origin ? origin.replace(/\/$/, '') : '';
+    const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
+
+    if (!origin || normalizedAllowed.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
+      console.log(`[CORS Blocked]: Origin -> ${origin}`);
       callback(new Error('Blocked by CORS'));
     }
   },
