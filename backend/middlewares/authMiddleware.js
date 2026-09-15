@@ -3,15 +3,19 @@ import User from '../models/User.js';
 
 export const verifyToken = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Access denied. No token provided.' });
+  if (!token) {
+    return res.status(401).json({ message: 'Access denied. No token provided.' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    console.error('FATAL: JWT_SECRET environment variable is missing.');
+    return res.status(500).json({ message: 'Internal server security configuration error.' });
+  }
 
   try {
-    const verified = jwt.verify(
-      token, 
-      process.env.JWT_SECRET || 'tvarita_hackathon_secret_key_2026'
-    );
+    const verified = jwt.verify(token, jwtSecret);
 
-    // 💡 Fetch full user document from MongoDB (excluding password)
     const userId = verified.id || verified._id || verified.userId;
     const user = await User.findById(userId).select('-password');
 
@@ -19,14 +23,14 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: 'User non-existent or account removed.' });
     }
 
-    req.user = user; // 👈 Now req.user._id and req.user.role are guaranteed!
+    req.user = user;
     next();
   } catch (err) {
-    res.status(400).json({ message: 'Invalid or expired token.' });
+    return res.status(400).json({ message: 'Invalid or expired token.' });
   }
 };
 
-// Export alias so routes using 'protect' work seamlessly
+// Export alias for route compatibility
 export const protect = verifyToken;
 
 // Admin verification middleware

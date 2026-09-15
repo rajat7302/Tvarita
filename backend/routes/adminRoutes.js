@@ -3,18 +3,21 @@ import {
   getPendingArtForms, 
   approveArtForm, 
   deleteCommunityPost,
-  getPendingArtists,   // <-- 1. Import getPendingArtists
-  verifyArtist         // <-- 2. Import verifyArtist
+  getPendingArtists,
+  verifyArtist 
 } from '../controllers/adminController.js';
 import { protect, adminOnly } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/pending-artforms', protect, adminOnly, getPendingArtForms);
-router.put('/approve-artform/:id', protect, adminOnly, approveArtForm);
-router.delete('/post/:id', protect, adminOnly, deleteCommunityPost);
+// Enforce authentication & authorization globally on all admin routes
+router.use(protect);
+router.use(adminOnly);
 
-router.get('/pending-artists', protect, adminOnly, getPendingArtists);
-router.patch('/verify-artist/:id', protect, adminOnly, verifyArtist);
+router.get('/pending-artforms', getPendingArtForms);
+router.put('/approve-artform/:id', approveArtForm);
+router.delete('/post/:id', deleteCommunityPost);
+router.get('/pending-artists', getPendingArtists);
+router.patch('/verify-artist/:id', verifyArtist);
 
 export default router;
