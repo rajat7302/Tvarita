@@ -24,7 +24,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://tvarita.onrender.com',
+  'https://twarita.onrender.com',
   process.env.CLIENT_URL
 ].filter(Boolean).map(o => o.replace(/\/$/, ''));
 
