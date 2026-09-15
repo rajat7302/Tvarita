@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import Navbar from '../components/common/NavBar';
+import Navbar from '../components/common/Navbar';
 import SearchBar from '../components/common/SearchBar';
 import ArtFormCard from '../components/cards/ArtFormCard';
 import IndiaMap from '../components/map/IndiaMap';

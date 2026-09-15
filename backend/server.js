@@ -8,7 +8,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 
 // Route Imports
 import authRoutes from './routes/authRoutes.js';
-import adminRoutes from './routes/adminRoutes.js'; // <-- 1. ADD THIS IMPORT
+import adminRoutes from './routes/adminRoutes.js';
 import artFormRoutes from './routes/artFormRoutes.js';
 import artistRoutes from './routes/artistRoutes.js';
 import showRoutes from './routes/showRoutes.js';
@@ -19,14 +19,30 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// Configured CORS for Local + Render
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(express.json());
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes); // <-- 2. ADD THIS MOUNT LINE
+app.use('/api/admin', adminRoutes);
 app.use('/api/artforms', artFormRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/shows', showRoutes);

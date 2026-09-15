@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Navbar from '../components/common/NavBar';
+import Navbar from '../components/common/Navbar';
 import ArtistCard from '../components/cards/ArtistCard';
 import ShowCard from '../components/cards/ShowCard';
 import StoryCard from '../components/cards/StoryCard';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/common/NavBar';
+import Navbar from '../components/common/Navbar';
 import api from '../services/api';
 import { ShieldCheck, Check } from 'lucide-react';
 import AdminArtistVerification from '../components/AdminArtistVerification';
