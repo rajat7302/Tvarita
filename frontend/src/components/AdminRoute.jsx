@@ -13,7 +13,6 @@ export default function AdminRoute() {
     );
   }
 
-  // Strictly block non-admin users from accessing client-side routes
   if (!user || user.role !== 'admin') {
     return <Navigate to="/" replace />;
   }

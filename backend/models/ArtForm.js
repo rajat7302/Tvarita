@@ -40,9 +40,9 @@ const artFormSchema = new mongoose.Schema(
     },
     isApproved: {
       type: Boolean,
-      default: false, // Changed to false for pending user requests
+      default: false,
     },
-    // Handles array of image URLs from Multer/Cloudinary
+   
     images: {
       type: [String],
       default: [],

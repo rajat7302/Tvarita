@@ -1,7 +1,7 @@
 import Show from '../models/Show.js';
-import Review from '../models/Review.js'; // 1. Import your standalone Review model
+import Review from '../models/Review.js';
 
-// Get all upcoming shows
+
 export const getShows = async (req, res) => {
   try {
     const shows = await Show.find()
@@ -13,7 +13,7 @@ export const getShows = async (req, res) => {
   }
 };
 
-// Create a new show
+
 export const createShow = async (req, res) => {
   try {
     const artistTeamId = req.user?._id || req.user?.id || req.user?.userId;
@@ -97,7 +97,7 @@ export const getShowReviews = async (req, res) => {
   }
 };
 
-// 3. Save a review or discussion post to the Review collection
+
 export const addShowReview = async (req, res) => {
   try {
     const { rating, comment, imageUrl } = req.body;
@@ -151,7 +151,7 @@ export const toggleLikeReview = async (req, res) => {
       await review.save();
       return res.status(200).json(review);
     } else {
-      // Helper to find and toggle like inside nested replies recursively
+    
       const toggleReplyLike = (replies) => {
         for (let rep of replies) {
           if (rep._id.toString() === replyId) {
@@ -196,10 +196,9 @@ export const addNestedReply = async (req, res) => {
     };
 
     if (!parentReplyId) {
-      // Direct reply to the main comment
       review.replies.push(newReply);
     } else {
-      // Recursive function to locate parent reply and push deeper
+     
       const insertRecursive = (repliesList) => {
         for (let rep of repliesList) {
           if (rep._id.toString() === parentReplyId) {

@@ -20,7 +20,6 @@ export default function ProposeArtFormModal({ isOpen, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
-      // Sends to backend with default isApproved: false
       await api.post('/artforms', formData);
       onSuccess?.();
       onClose();

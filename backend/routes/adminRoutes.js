@@ -10,7 +10,7 @@ import { protect, adminOnly } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Enforce authentication & authorization globally on all admin routes
+
 router.use(protect);
 router.use(adminOnly);
 

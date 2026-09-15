@@ -14,7 +14,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Storage engine initialization
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {

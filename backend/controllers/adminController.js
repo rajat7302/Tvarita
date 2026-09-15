@@ -38,7 +38,7 @@ export const deleteCommunityPost = async (req, res) => {
 
 export const getPendingArtists = async (req, res) => {
   try {
-    // Find users who have an artistProfile submitted but are not yet verified
+    
     const pending = await User.find({ 
       isVerifiedArtist: false,
       'artistProfile.teamName': { $exists: true }

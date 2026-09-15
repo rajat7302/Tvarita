@@ -30,10 +30,10 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-// Export alias for route compatibility
+
 export const protect = verifyToken;
 
-// Admin verification middleware
+
 export const adminOnly = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
@@ -41,7 +41,7 @@ export const adminOnly = (req, res, next) => {
   next();
 };
 
-// Artist verification middleware
+
 export const requireVerifiedArtist = (req, res, next) => {
   if (!req.user || (req.user.role !== 'artist' && req.user.role !== 'admin')) {
     return res.status(403).json({ message: 'Only artist accounts can post shows.' });

@@ -128,7 +128,7 @@ export default function Register() {
             />
           </div>
 
-          {/* Conditional Artist Team Registration Fields */}
+          {}
           {role === 'artist' && (
             <div className="border-t border-stone-200 pt-4 space-y-3">
               <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 text-[11px] text-orange-950">

@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
   try {
-    // 1. Destructure role and artistProfile from req.body
     const { name, email, password, preferences, role, artistProfile } = req.body;
     
     const existingUser = await User.findOne({ email });
@@ -12,7 +11,6 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 2. Pass role and artistProfile to User.create()
     const user = await User.create({
       name,
       email,
@@ -76,7 +74,7 @@ export const login = async (req, res) => {
   }
 };
 
-// import User from '../models/User.js';
+
 
 export const updateProfile = async (req, res) => {
   try {
@@ -86,10 +84,9 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update basic fields
+   
     if (req.body.name) user.name = req.body.name;
 
-    // Update nested team/artist profile if provided
     if (req.body.artistProfile) {
       const { teamName, teamDescription, members } = req.body.artistProfile;
 
@@ -100,7 +97,7 @@ export const updateProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    // Exclude password in response
+
     const { password, ...userData } = updatedUser._doc;
     res.status(200).json({ message: 'Profile updated successfully', user: userData });
   } catch (error) {
