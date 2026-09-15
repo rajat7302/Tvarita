@@ -19,14 +19,16 @@ export default function Navbar() {
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-gray-900">Tvarita</span>
-              <span className="block text-[10px] text-amber-800 tracking-wider font-semibold uppercase -mt-1">Arts Collective</span>
+              <span className="block text-[10px] text-amber-800 tracking-wider font-semibold uppercase -mt-1">
+                Arts Collective
+              </span>
             </div>
           </Link>
 
           <div className="flex items-center gap-4">
             <Link 
               to="/explore" 
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#E65100] transition"
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#E65100] bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition"
             >
               <Compass className="w-4 h-4" /> Explore
             </Link>
@@ -56,7 +58,7 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 text-sm font-medium bg-[#E65100] text-white px-4 py-2 rounded-xl hover:bg-[#D84315] transition shadow-sm"
+                className="flex items-center gap-1.5 text-sm font-semibold bg-[#E65100] text-white px-4 py-2 rounded-xl hover:bg-[#D84315] transition shadow-sm"
               >
                 <LogIn className="w-4 h-4" /> Sign In
               </Link>
@@ -65,7 +67,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Profile Edit Modal */}
       {user && (
         <EditProfileModal
           isOpen={isEditModalOpen}

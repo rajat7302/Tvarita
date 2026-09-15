@@ -3,7 +3,9 @@ import ArtForm from '../models/ArtForm.js';
 export const getArtForms = async (req, res) => {
   try {
     const { category, search } = req.query;
-    let query = { status: 'verified' };
+
+    // Filter by boolean flag matching your schema (isApproved: true)
+    let query = { isApproved: true };
 
     if (category) {
       query.category = category;
@@ -17,7 +19,7 @@ export const getArtForms = async (req, res) => {
       ];
     }
 
-    // Non-popularity order (chronological/neutral)
+    // Chronological sort
     const artForms = await ArtForm.find(query).sort({ createdAt: -1 });
     res.json(artForms);
   } catch (error) {
@@ -34,12 +36,20 @@ export const getArtFormById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const requestArtForm = async (req, res) => {
   try {
-    const { name, category, state, region, description } = req.body;
-    
-    // Extract image URL from Multer if uploaded
-    const imageUrl = req.file ? req.file.path : null;
+    const { name, category, state, region, description, imageUrl } = req.body;
+
+    // Build the images array based on Multer upload or direct URL fallback
+    let imageList = [];
+
+    if (req.file) {
+      // Multer-Cloudinary sets path/secure_url, local disk storage sets path
+      imageList.push(req.file.path || req.file.secure_url);
+    } else if (imageUrl && imageUrl.trim()) {
+      imageList.push(imageUrl.trim());
+    }
 
     const newArtForm = await ArtForm.create({
       name,
@@ -47,13 +57,16 @@ export const requestArtForm = async (req, res) => {
       state,
       region,
       description,
-      imageUrl,
-      status: 'pending',
-      isApproved: false // Explicitly set boolean for admin filter
+      images: imageList, // Matches 'images: [String]' in schema
+      isApproved: false  // Matches 'isApproved: Boolean' in schema
     });
 
-    res.status(201).json({ message: 'Art form requested for verification', artForm: newArtForm });
+    res.status(201).json({
+      message: 'Art form requested for verification',
+      artForm: newArtForm
+    });
   } catch (error) {
+    console.error('Request Art Form Error:', error);
     res.status(400).json({ message: error.message });
   }
 };

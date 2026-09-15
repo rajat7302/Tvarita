@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import { requestArtForm } from '../../services/artFormService';
 
 export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
@@ -10,24 +10,34 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
     region: '',
     description: '',
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null); // Holds Base64 string
+  const [imageUrl, setImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   if (!isOpen) return null;
 
+  // Convert uploaded image directly to Base64 string
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result); // Base64 data URI string
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleRemoveImage = () => {
-    setImageFile(null);
     setImagePreview(null);
+  };
+
+  const resetForm = () => {
+    handleRemoveImage();
+    setImageUrl('');
+    setFormData({ name: '', category: 'Dance', state: '', region: '', description: '' });
+    setSubmitted(false);
   };
 
   const handleSubmit = async (e) => {
@@ -35,25 +45,23 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
-      const payload = new FormData();
-      payload.append('name', formData.name);
-      payload.append('category', formData.category);
-      payload.append('state', formData.state);
-      payload.append('region', formData.region);
-      payload.append('description', formData.description);
-      if (imageFile) {
-        payload.append('image', imageFile);
-      }
+      // Send regular JSON object (Matches req.body.imageUrl in requestArtForm controller)
+      const finalImageUrl = imagePreview || imageUrl.trim() || '';
 
-      await requestArtForm(payload);
+      await requestArtForm({
+        name: formData.name,
+        category: formData.category,
+        state: formData.state,
+        region: formData.region,
+        description: formData.description,
+        imageUrl: finalImageUrl,
+      });
+
       setSubmitted(true);
       if (onSuccess) onSuccess();
 
       setTimeout(() => {
-        setSubmitted(false);
-        setImageFile(null);
-        setImagePreview(null);
-        setFormData({ name: '', category: 'Dance', state: '', region: '', description: '' });
+        resetForm();
         onClose();
       }, 1800);
     } catch (err) {
@@ -81,7 +89,7 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
 
         {submitted ? (
           <div className="py-8 text-center bg-amber-50 rounded-xl text-amber-900 font-bold border border-amber-200">
-            ✓ Art form requested! Sent for Tvarita verification.
+            ✓ Art form requested! Sent for verification.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -117,6 +125,14 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
               />
             </div>
 
+            <input
+              type="text"
+              placeholder="Region / District (e.g., Garhwal)"
+              value={formData.region}
+              onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+              className="w-full px-3.5 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+            />
+
             <textarea
               required
               rows="3"
@@ -126,7 +142,6 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
               className="w-full px-3.5 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 resize-none"
             ></textarea>
 
-            {/* Photo Input (Cloudinary upload integration) */}
             <div className="space-y-1.5 pt-1">
               <label className="block text-xs font-bold text-gray-700">
                 Cover Photo <span className="text-gray-400 font-normal">(Optional)</span>
@@ -135,7 +150,7 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 px-3.5 py-2 bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold cursor-pointer hover:bg-amber-100 transition">
                   <Upload className="w-4 h-4" />
-                  <span>{imageFile ? 'Change Photo' : 'Upload Photo'}</span>
+                  <span>{imagePreview ? 'Change Photo' : 'Upload Photo'}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -166,9 +181,9 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[#E65100] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#D84315] disabled:bg-gray-300 transition shadow-sm mt-2"
+              className="w-full bg-[#E65100] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#D84315] disabled:bg-gray-300 transition shadow-sm mt-2 flex items-center justify-center gap-2"
             >
-              {submitting ? 'Submitting...' : 'Submit Request'}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Request'}
             </button>
           </form>
         )}

@@ -4,53 +4,58 @@ const artFormSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
-      trim: true
+      required: [true, 'Art form name is required'],
+      trim: true,
     },
     category: {
       type: String,
-      required: true,
-      enum: ['Dance', 'Music', 'Theatre', 'Painting', 'Craft']
+      required: [true, 'Category is required'],
+      enum: {
+        values: ['Dance', 'Music', 'Theatre', 'Painting', 'Craft'],
+        message: '{VALUE} is not a supported category',
+      },
     },
     state: {
       type: String,
-      required: true,
-      trim: true
+      required: [true, 'State is required'],
+      trim: true,
     },
     region: {
       type: String,
-      default: ''
+      default: '',
+      trim: true,
     },
     description: {
       type: String,
-      required: true
+      required: [true, 'Description is required'],
+      trim: true,
     },
     historicalContext: {
       type: String,
-      default: ''
+      default: '',
     },
     isUnderrepresented: {
       type: Boolean,
-      default: true
+      default: true,
     },
     isApproved: {
       type: Boolean,
-      default: true
+      default: false, // Changed to false for pending user requests
     },
-    images: [
-      {
-        type: String
-      }
-    ],
+    // Handles array of image URLs from Multer/Cloudinary
+    images: {
+      type: [String],
+      default: [],
+    },
     artists: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Artist'
-      }
-    ]
+        ref: 'Artist',
+      },
+    ],
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
