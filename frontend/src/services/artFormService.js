@@ -11,7 +11,11 @@ export const getArtFormById = async (id) => {
 };
 
 export const requestArtForm = async (data) => {
-  const response = await api.post('/artforms/request', data);
+  const response = await api.post('/artforms/request', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 

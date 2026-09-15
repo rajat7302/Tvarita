@@ -15,9 +15,12 @@ export const approveArtForm = async (req, res) => {
   try {
     const artForm = await ArtForm.findByIdAndUpdate(
       req.params.id, 
-      { isApproved: true }, 
-      { returnDocument: 'after' } // <-- Replaced { new: true }
+      { isApproved: true, status: 'verified' }, 
+      { returnDocument: 'after' }
     );
+    
+    if (!artForm) return res.status(404).json({ message: 'Art Form not found' });
+
     res.json({ message: 'Art Form approved successfully', artForm });
   } catch (error) {
     res.status(500).json({ message: error.message });

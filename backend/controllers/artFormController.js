@@ -34,18 +34,24 @@ export const getArtFormById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 export const requestArtForm = async (req, res) => {
   try {
     const { name, category, state, region, description } = req.body;
+    
+    // Extract image URL from Multer if uploaded
+    const imageUrl = req.file ? req.file.path : null;
+
     const newArtForm = await ArtForm.create({
       name,
       category,
       state,
       region,
       description,
-      status: 'pending'
+      imageUrl,
+      status: 'pending',
+      isApproved: false // Explicitly set boolean for admin filter
     });
+
     res.status(201).json({ message: 'Art form requested for verification', artForm: newArtForm });
   } catch (error) {
     res.status(400).json({ message: error.message });

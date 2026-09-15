@@ -15,24 +15,47 @@ export const getShows = async (req, res) => {
 // Create a new show
 export const createShow = async (req, res) => {
   try {
-    const { artFormId, artFormName, title, description, venue, date, ticketPrice, totalTickets } = req.body;
+    // 💡 Extract User ID safely from req.user
+    const artistTeamId = req.user?._id || req.user?.id || req.user?.userId;
 
-    const newShow = new Show({
+    if (!artistTeamId) {
+      return res.status(401).json({ message: 'Unauthorized: User authentication required.' });
+    }
+
+    const { 
+      artFormId, 
+      artFormName, 
+      title, 
+      description, 
+      venue, 
+      date, 
+      ticketPrice, 
+      totalTickets, 
+      availableTickets,
+      imageUrl,
+      bannerUrl
+    } = req.body;
+
+    const ticketCount = Number(totalTickets || availableTickets) || 100;
+    const finalImageUrl = imageUrl || bannerUrl || '';
+
+    const newShow = await Show.create({
+      artistTeamId,
       artFormId: artFormId || null,
       artFormName: artFormName || '',
-      artistTeamId: req.user?._id || req.user?.id,
       title,
-      description,
+      description: description || '',
       venue,
       date,
       ticketPrice: Number(ticketPrice) || 0,
-      totalTickets: Number(totalTickets) || 0,
-      availableTickets: Number(totalTickets) || 0
+      totalTickets: ticketCount,
+      availableTickets: ticketCount,
+      imageUrl: finalImageUrl
     });
 
-    await newShow.save();
-    res.status(201).json({ message: 'Show created successfully.', show: newShow });
+    res.status(201).json({ success: true, data: newShow });
   } catch (error) {
+    console.error('Error creating show:', error);
     res.status(500).json({ message: error.message });
   }
 };

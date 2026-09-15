@@ -11,7 +11,9 @@ const showSchema = new mongoose.Schema({
   ticketPrice: { type: Number, default: 0 },
   totalTickets: { type: Number, required: true },
   availableTickets: { type: Number, required: true },
-  isSoldOut: { type: Boolean, default: false }
+  isSoldOut: { type: Boolean, default: false },
+  imageUrl: { type: String, default: '' } // 👈 Added explicit image field
 }, { timestamps: true });
 
-export default mongoose.model('Show', showSchema);
+const Show = mongoose.models.Show || mongoose.model('Show', showSchema);
+export default Show;

@@ -75,3 +75,35 @@ export const login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// import User from '../models/User.js';
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update basic fields
+    if (req.body.name) user.name = req.body.name;
+
+    // Update nested team/artist profile if provided
+    if (req.body.artistProfile) {
+      const { teamName, teamDescription, members } = req.body.artistProfile;
+
+      if (teamName !== undefined) user.artistProfile.teamName = teamName;
+      if (teamDescription !== undefined) user.artistProfile.teamDescription = teamDescription;
+      if (Array.isArray(members)) user.artistProfile.members = members;
+    }
+
+    const updatedUser = await user.save();
+
+    // Exclude password in response
+    const { password, ...userData } = updatedUser._doc;
+    res.status(200).json({ message: 'Profile updated successfully', user: userData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
