@@ -38,7 +38,12 @@ export const deleteCommunityPost = async (req, res) => {
 
 export const getPendingArtists = async (req, res) => {
   try {
-    const pending = await User.find({ role: 'artist', isVerifiedArtist: false }).select('-password');
+    // Find users who have an artistProfile submitted but are not yet verified
+    const pending = await User.find({ 
+      isVerifiedArtist: false,
+      'artistProfile.teamName': { $exists: true }
+    }).select('-password');
+
     res.status(200).json(pending);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -49,9 +54,13 @@ export const verifyArtist = async (req, res) => {
   try {
     const artist = await User.findByIdAndUpdate(
       req.params.id,
-      { isVerifiedArtist: true },
-      { returnDocument: 'after' } // <-- Replaced { new: true }
+      { isVerifiedArtist: true, role: 'artist' }, // Promotes role & verifies
+      { returnDocument: 'after' }
     ).select('-password');
+
+    if (!artist) {
+      return res.status(404).json({ message: 'Artist record not found' });
+    }
     
     res.status(200).json({ message: 'Artist verified successfully.', artist });
   } catch (err) {
