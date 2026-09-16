@@ -20,6 +20,8 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
 
   if (!isOpen) return null;
 
+  const canManageTeam = user?.role === 'artist' || user?.role === 'admin';
+
   // Dynamic Member Handlers for Teams
   const handleAddMember = () => {
     setMembers((current) => [...current, { memberName: '', roleInTeam: '' }]);
@@ -42,11 +44,13 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
     try {
       const payload = {
         name,
-        artistProfile: {
-          teamName,
-          teamDescription,
-          members,
-        },
+        ...(canManageTeam && {
+          artistProfile: {
+            teamName,
+            teamDescription,
+            members,
+          },
+        }),
       };
 
       const res = await api.put('/auth/profile', payload);
@@ -81,7 +85,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
             />
           </div>
 
-          <div className="space-y-4 border-t border-amber-100 pt-4">
+          {canManageTeam && <div className="space-y-4 border-t border-amber-100 pt-4">
               <h4 className="text-sm font-bold text-amber-900">Artist / Team Information</h4>
 
               <div>
@@ -146,7 +150,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
                   ))}
                 </div>
               </div>
-          </div>
+          </div>}
 
           <button
             type="submit"

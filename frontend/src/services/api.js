@@ -11,6 +11,14 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('tvarita_token') || localStorage.getItem('token');
+
+  if (config.data instanceof FormData) {
+    if (typeof config.headers?.delete === 'function') {
+      config.headers.delete('Content-Type');
+    } else {
+      delete config.headers['Content-Type'];
+    }
+  }
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

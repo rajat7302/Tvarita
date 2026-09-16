@@ -14,6 +14,7 @@ import artistRoutes from './routes/artistRoutes.js';
 import showRoutes from './routes/showRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import experienceRoutes from './routes/experienceRoutes.js';
+import communityCommentRoutes from './routes/communityCommentRoutes.js';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/shows', showRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/experiences', experienceRoutes);
+app.use('/api/community-comments', communityCommentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Tvarita Arts API is operational' });

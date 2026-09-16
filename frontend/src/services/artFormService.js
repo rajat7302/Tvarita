@@ -40,7 +40,9 @@ export const getPostsByArtForm = async (artFormId) => {
 };
 
 export const createCommunityPost = async (postData) => {
-  const response = await api.post('/posts', postData);
+  const response = await api.post('/posts', postData, postData instanceof FormData
+    ? { headers: { 'Content-Type': 'multipart/form-data' } }
+    : undefined);
   return response.data;
 };
 
@@ -50,7 +52,9 @@ export const getExperiencesByArtForm = async (artFormId) => {
 };
 
 export const createExperience = async (experienceData) => {
-  const response = await api.post('/experiences', experienceData);
+  const response = await api.post('/experiences', experienceData, experienceData instanceof FormData
+    ? { headers: { 'Content-Type': 'multipart/form-data' } }
+    : undefined);
   return response.data;
 };
 

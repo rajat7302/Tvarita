@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -15,6 +16,21 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setIsGuest(false);
+
+      api.get('/auth/profile')
+        .then((response) => {
+          const currentUser = response.data?.user;
+          if (currentUser) {
+            localStorage.setItem('tvarita_user', JSON.stringify(currentUser));
+            setUser(currentUser);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to refresh profile:', error);
+        })
+        .finally(() => setLoading(false));
+
+      return;
     } else if (guestMode === 'true') {
       setIsGuest(true);
     }

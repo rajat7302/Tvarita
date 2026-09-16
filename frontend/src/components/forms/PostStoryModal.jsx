@@ -6,6 +6,8 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -17,10 +19,19 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
     setSubmitting(true);
 
     try {
-      await createCommunityPost({ artFormId, title, content, imageUrl });
+      const payload = new FormData();
+      payload.append('artFormId', artFormId);
+      payload.append('title', title);
+      payload.append('content', content);
+      if (mediaFile) payload.append('media', mediaFile);
+      else if (imageUrl) payload.append('imageUrl', imageUrl);
+
+      await createCommunityPost(payload);
       setTitle('');
       setContent('');
       setImageUrl('');
+      setMediaFile(null);
+      setMediaPreview('');
       onPostAdded();
       onClose();
     } catch (err) {
@@ -28,6 +39,18 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleMediaChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Media must be smaller than 50 MB.');
+      return;
+    }
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+    setImageUrl('');
   };
 
   return (
@@ -42,7 +65,7 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2 border border-red-200">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -73,7 +96,17 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Photo URL (Optional)</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Media (Optional)</label>
+            <label className="mb-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/30 px-3 py-3 text-xs font-semibold text-amber-900">
+              Upload image, video, or audio (max 50 MB)
+              <input type="file" accept="image/*,video/*,audio/*" onChange={handleMediaChange} className="hidden" />
+            </label>
+            {mediaPreview && (
+              <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 p-2">
+                {mediaFile?.type.startsWith('video/') ? <video src={mediaPreview} controls className="max-h-40 w-full rounded-lg" /> : mediaFile?.type.startsWith('audio/') ? <audio src={mediaPreview} controls className="w-full" /> : <img src={mediaPreview} alt="Media preview" className="max-h-40 w-full rounded-lg object-cover" />}
+            </div>
+            )}
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Or Photo URL</label>
             <input
               type="url"
               value={imageUrl}

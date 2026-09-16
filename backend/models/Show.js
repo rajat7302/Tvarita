@@ -12,7 +12,10 @@ const showSchema = new mongoose.Schema({
   totalTickets: { type: Number, required: true },
   availableTickets: { type: Number, required: true },
   isSoldOut: { type: Boolean, default: false },
-  imageUrl: { type: String, default: '' } 
+  imageUrl: { type: String, default: '' },
+  mediaUrl: { type: String, default: '' },
+  mediaType: { type: String, enum: ['image', 'video', 'audio', ''], default: '' },
+  expiresAt: { type: Date, index: { expires: 0 } }
 }, { timestamps: true });
 
 const Show = mongoose.models.Show || mongoose.model('Show', showSchema);

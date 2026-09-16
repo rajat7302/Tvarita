@@ -5,6 +5,8 @@ const replySchema = new mongoose.Schema({
   userName: { type: String, required: true },
   comment: { type: String, required: true },
   imageUrl: { type: String, default: '' },
+  mediaUrl: { type: String, default: '' },
+  mediaType: { type: String, enum: ['image', 'video', 'audio', ''], default: '' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
 }, { timestamps: true });
 

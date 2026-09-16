@@ -1,9 +1,14 @@
 import Show from '../models/Show.js';
 import Review from '../models/Review.js';
+import ArtForm from '../models/ArtForm.js';
 
+const SHOW_RETENTION_DAYS = 4;
 
 export const getShows = async (req, res) => {
   try {
+    const retentionCutoff = new Date(Date.now() - SHOW_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    await Show.deleteMany({ date: { $lt: retentionCutoff } });
+
     const shows = await Show.find()
       .populate('artistTeamId', 'name email')
       .sort({ date: 1 });
@@ -33,11 +38,30 @@ export const createShow = async (req, res) => {
       totalTickets, 
       availableTickets,
       imageUrl,
-      bannerUrl
+      bannerUrl,
+      mediaType
     } = req.body;
 
+    const showDate = new Date(date);
+    if (!date || Number.isNaN(showDate.getTime())) {
+      return res.status(400).json({ message: 'Please provide a valid show date.' });
+    }
+
+    if (showDate <= new Date()) {
+      return res.status(400).json({ message: 'Show date must be in the future.' });
+    }
+
     const ticketCount = Number(totalTickets || availableTickets) || 100;
+    if (!Number.isInteger(ticketCount) || ticketCount < 1) {
+      return res.status(400).json({ message: 'Available tickets must be a positive whole number.' });
+    }
+
     const finalImageUrl = imageUrl || bannerUrl || '';
+    const uploadedMediaUrl = req.file?.path || req.file?.secure_url || '';
+    const finalMediaType = req.file
+      ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
+      : mediaType || '';
+    const expiresAt = new Date(showDate.getTime() + SHOW_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
     const newShow = await Show.create({
       artistTeamId,
@@ -46,11 +70,14 @@ export const createShow = async (req, res) => {
       title,
       description: description || '',
       venue,
-      date,
+      date: showDate,
       ticketPrice: Number(ticketPrice) || 0,
       totalTickets: ticketCount,
       availableTickets: ticketCount,
-      imageUrl: finalImageUrl
+      imageUrl: finalImageUrl,
+      mediaUrl: uploadedMediaUrl,
+      mediaType: finalMediaType,
+      expiresAt
     });
 
     res.status(201).json({ success: true, data: newShow });
@@ -100,7 +127,7 @@ export const getShowReviews = async (req, res) => {
 
 export const addShowReview = async (req, res) => {
   try {
-    const { rating, comment, imageUrl } = req.body;
+    const { rating, comment, imageUrl, mediaType } = req.body;
     const userId = req.user?._id || req.user?.id;
     const userName = req.user?.name || 'Anonymous';
 
@@ -117,13 +144,19 @@ export const addShowReview = async (req, res) => {
       return res.status(404).json({ message: 'Show not found.' });
     }
 
+    const uploadedMediaUrl = req.file?.path || req.file?.secure_url || '';
+
     const newReview = await Review.create({
       showId: req.params.id,
       userId,
       userName,
       rating: rating ? Number(rating) : undefined,
       comment: comment || '',
-      imageUrl: imageUrl || ''
+      imageUrl: imageUrl || uploadedMediaUrl,
+      mediaUrl: uploadedMediaUrl,
+      mediaType: req.file
+        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
+        : mediaType || ''
     });
 
     res.status(201).json({ message: 'Review added successfully.', review: newReview });
@@ -218,5 +251,28 @@ export const addNestedReply = async (req, res) => {
     res.status(201).json(review);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+export const getShowsByArtForm = async (req, res) => {
+  try {
+    const retentionCutoff = new Date(Date.now() - SHOW_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    await Show.deleteMany({ date: { $lt: retentionCutoff } });
+
+    const artForm = await ArtForm.findById(req.params.artFormId).select('name category');
+    if (!artForm) return res.status(404).json({ message: 'Art form not found.' });
+
+    const shows = await Show.find({
+      date: { $gte: retentionCutoff },
+      $or: [
+        { artFormId: artForm._id },
+        { artFormName: artForm.name },
+        { artFormName: artForm.category }
+      ]
+    }).populate('artistTeamId', 'name email').sort({ date: 1 });
+
+    res.status(200).json(shows);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

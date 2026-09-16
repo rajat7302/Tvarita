@@ -29,6 +29,15 @@ const experienceSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
       default: ''
+    },
+    mediaUrl: {
+      type: String,
+      default: ''
+    },
+    mediaType: {
+      type: String,
+      enum: ['image', 'video', 'audio', ''],
+      default: ''
     }
   },
   {

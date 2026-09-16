@@ -4,7 +4,7 @@ export const getPostsByArtForm = async (req, res) => {
   try {
     const posts = await CommunityPost.find({ 
       artFormId: req.params.artFormId, 
-      status: 'published' 
+      status: { $in: ['published', null] }
     }).populate('userId', 'name').sort({ createdAt: -1 });
     
     res.json(posts);
@@ -15,7 +15,7 @@ export const getPostsByArtForm = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    const { artFormId, artFormNameSubmitted, title, content, imageUrl } = req.body;
+    const { artFormId, artFormNameSubmitted, title, content, imageUrl, mediaType } = req.body;
     
     const post = await CommunityPost.create({
       userId: req.user.id,
@@ -24,6 +24,10 @@ export const createPost = async (req, res) => {
       title,
       content,
       imageUrl: imageUrl || '',
+      mediaUrl: req.file?.path || req.file?.secure_url || '',
+      mediaType: req.file
+        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
+        : mediaType || '',
       status: artFormId ? 'published' : 'pending_verification'
     });
 

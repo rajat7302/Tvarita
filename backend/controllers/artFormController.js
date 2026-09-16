@@ -39,7 +39,7 @@ export const getArtFormById = async (req, res) => {
 
 export const requestArtForm = async (req, res) => {
   try {
-    const { name, category, state, region, description, imageUrl } = req.body;
+    const { name, category, state, region, description, imageUrl, isUnderrepresented } = req.body;
 
     // Build the images array based on Multer upload or direct URL fallback
     let imageList = [];
@@ -58,6 +58,7 @@ export const requestArtForm = async (req, res) => {
       region,
       description,
       images: imageList, // Matches 'images: [String]' in schema
+      isUnderrepresented: isUnderrepresented !== undefined ? Boolean(isUnderrepresented) : true,
       isApproved: false  // Matches 'isApproved: Boolean' in schema
     });
 

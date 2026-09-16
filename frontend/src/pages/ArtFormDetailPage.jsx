@@ -9,6 +9,7 @@ import PostStoryModal from '../components/forms/PostStoryModal';
 import BookingModal from '../components/forms/BookingModal';
 import ReviewModal from '../components/forms/ReviewModal';
 import GuestGateModal from '../components/common/GuestGateModal';
+import CommunityDiscussionModal from '../components/common/CommunityDiscussionModal';
 import { 
   getArtFormById, 
   getShowsByArtForm, 
@@ -35,6 +36,7 @@ export default function ArtFormDetailPage() {
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [selectedShow, setSelectedShow] = useState(null);
   const [gateAction, setGateAction] = useState('');
+  const [discussionTarget, setDiscussionTarget] = useState(null);
 
   useEffect(() => {
     fetchDetailData();
@@ -159,7 +161,7 @@ export default function ArtFormDetailPage() {
             ) : (
               <div className="space-y-4">
                 {posts.map(post => (
-                  <StoryCard key={post._id} post={post} />
+                  <StoryCard key={post._id} post={post} onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'post', item }))} />
                 ))}
               </div>
             )}
@@ -186,7 +188,7 @@ export default function ArtFormDetailPage() {
             ) : (
               <div className="space-y-3">
                 {experiences.map(exp => (
-                  <ExperienceCard key={exp._id} experience={exp} />
+                  <ExperienceCard key={exp._id} experience={exp} onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'experience', item }))} />
                 ))}
               </div>
             )}
@@ -215,6 +217,19 @@ export default function ArtFormDetailPage() {
       <BookingModal show={selectedShow} isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} />
       <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} artFormId={id} onReviewAdded={fetchDetailData} />
       <GuestGateModal isOpen={isGateOpen} onClose={() => setIsGateOpen(false)} actionName={gateAction} />
+      <CommunityDiscussionModal
+        isOpen={Boolean(discussionTarget)}
+        onClose={() => setDiscussionTarget(null)}
+        targetType={discussionTarget?.type}
+        targetId={discussionTarget?.item?._id}
+        title={discussionTarget?.item?.title || 'Attendee reflection'}
+        isGuest={isGuest}
+        onGuest={() => {
+          setDiscussionTarget(null);
+          setGateAction('join the discussion');
+          setIsGateOpen(true);
+        }}
+      />
     </div>
   );
 }

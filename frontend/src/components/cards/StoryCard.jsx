@@ -1,7 +1,7 @@
 import React from 'react';
-import { User, Clock } from 'lucide-react';
+import { User, Clock, MessageCircle } from 'lucide-react';
 
-export default function StoryCard({ post }) {
+export default function StoryCard({ post, onDiscuss }) {
   const formattedDate = new Date(post.createdAt).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short'
@@ -24,13 +24,24 @@ export default function StoryCard({ post }) {
       <h4 className="font-bold text-gray-900 mb-1">{post.title}</h4>
       <p className="text-sm text-gray-700 whitespace-pre-line">{post.content}</p>
 
-      {post.imageUrl && (
+      {post.mediaUrl && post.mediaType === 'video' ? (
+        <video src={post.mediaUrl} controls className="mt-3 max-h-48 w-full rounded-xl object-cover" />
+      ) : post.mediaUrl && post.mediaType === 'audio' ? (
+        <audio src={post.mediaUrl} controls className="mt-3 w-full" />
+      ) : (post.mediaUrl || post.imageUrl) && (
         <img 
-          src={post.imageUrl} 
+          src={post.mediaUrl || post.imageUrl} 
           alt="Post attachment" 
           className="mt-3 rounded-xl max-h-48 w-full object-cover" 
         />
       )}
+
+      <button
+        onClick={() => onDiscuss?.(post)}
+        className="mt-4 flex items-center gap-1.5 text-xs font-bold text-amber-900 hover:text-[#E65100]"
+      >
+        <MessageCircle className="h-4 w-4" /> Discuss
+      </button>
     </div>
   );
 }

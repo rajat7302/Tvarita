@@ -26,14 +26,18 @@ export const getExperiencesByArtist = async (req, res) => {
 
 export const createExperience = async (req, res) => {
   try {
-    const { artFormId, artistId, showId, content, imageUrl } = req.body;
+    const { artFormId, artistId, showId, content, imageUrl, mediaType } = req.body;
     const experience = await Experience.create({
       userId: req.user.id,
       artFormId,
       artistId: artistId || null,
       showId: showId || null,
       content,
-      imageUrl: imageUrl || ''
+      imageUrl: imageUrl || '',
+      mediaUrl: req.file?.path || req.file?.secure_url || '',
+      mediaType: req.file
+        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
+        : mediaType || ''
     });
     res.status(201).json(experience);
   } catch (error) {

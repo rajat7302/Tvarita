@@ -24,6 +24,20 @@ const postSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
       default: ''
+    },
+    mediaUrl: {
+      type: String,
+      default: ''
+    },
+    mediaType: {
+      type: String,
+      enum: ['image', 'video', 'audio', ''],
+      default: ''
+    },
+    status: {
+      type: String,
+      enum: ['published', 'pending_verification'],
+      default: 'published'
     }
   },
   {

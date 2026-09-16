@@ -139,6 +139,9 @@ function ReplyItem({ reply, reviewId, onLike, onReplySubmit, currentUserId }) {
 
 export default function ExplorePage() {
   const { isGuest, user } = useContext(AuthContext);
+  const canPostShow = Boolean(
+    user && (user.role === 'admin' || (user.role === 'artist' && user.isVerifiedArtist))
+  );
 
   const [artForms, setArtForms] = useState([]);
   const [shows, setShows] = useState([]);
@@ -149,7 +152,9 @@ export default function ExplorePage() {
   const [search, setSearch] = useState('');
   const [selectedState, setSelectedState] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showCategoryFilter, setShowCategoryFilter] = useState('All');
   const [showUnderrepresentedOnly, setShowUnderrepresentedOnly] = useState(false);
+  const [exploreMode, setExploreMode] = useState('artForms');
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isCreateShowModalOpen, setIsCreateShowModalOpen] = useState(false);
@@ -170,6 +175,8 @@ export default function ExplorePage() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
   const [commentPhoto, setCommentPhoto] = useState(null);
+  const [commentMediaFile, setCommentMediaFile] = useState(null);
+  const [commentMediaPreview, setCommentMediaPreview] = useState('');
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isUrlMode, setIsUrlMode] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
@@ -197,6 +204,8 @@ export default function ExplorePage() {
       setComments([]);
       setNewCommentText('');
       setCommentPhoto(null);
+      setCommentMediaFile(null);
+      setCommentMediaPreview('');
       setImageUrlInput('');
       setIsUrlMode(false);
       setSortBy('newest');
@@ -263,13 +272,14 @@ export default function ExplorePage() {
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCommentPhoto(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      alert('Media must be smaller than 50 MB.');
+      return;
     }
+    setCommentMediaFile(file);
+    setCommentMediaPreview(URL.createObjectURL(file));
+    setCommentPhoto(null);
   };
 
   const handlePostComment = async (e) => {
@@ -280,21 +290,26 @@ export default function ExplorePage() {
     }
 
     const finalPhoto = commentPhoto || (imageUrlInput.trim() ? imageUrlInput.trim() : null);
-    if (!newCommentText.trim() && !finalPhoto) return;
+    if (!newCommentText.trim() && !finalPhoto && !commentMediaFile) return;
 
     const showId = activeDiscussionShow._id || activeDiscussionShow.id;
     setSubmittingComment(true);
 
     try {
-      const res = await api.post(`/shows/${showId}/reviews`, {
-        comment: newCommentText,
-        imageUrl: finalPhoto || undefined
+      const payload = new FormData();
+      payload.append('comment', newCommentText);
+      if (commentMediaFile) payload.append('media', commentMediaFile);
+      else if (finalPhoto) payload.append('imageUrl', finalPhoto);
+      const res = await api.post(`/shows/${showId}/reviews`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       const savedReview = res.data?.review || res.data?.data || res.data;
       setComments((prev) => [savedReview, ...prev]);
       setNewCommentText('');
       setCommentPhoto(null);
+      setCommentMediaFile(null);
+      setCommentMediaPreview('');
       setImageUrlInput('');
     } catch (err) {
       console.error('Error posting discussion comment:', err);
@@ -430,8 +445,8 @@ export default function ExplorePage() {
     const matchesSearch = !searchTerm || searchableText.includes(searchTerm);
 
     let matchesCategory = true;
-    if (selectedCategory !== 'All') {
-      const catTarget = selectedCategory.toLowerCase();
+    if (showCategoryFilter !== 'All') {
+      const catTarget = showCategoryFilter.toLowerCase();
       matchesCategory = searchableText.includes(catTarget);
     }
 
@@ -479,12 +494,14 @@ export default function ExplorePage() {
               <Heart className="w-4 h-4 fill-white" /> Become a Patron
             </button>
 
-            <button
-              onClick={() => isGuest ? setIsGateOpen(true) : setIsCreateShowModalOpen(true)}
-              className="flex items-center gap-2 bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-800 transition shadow-sm"
-            >
-              <Calendar className="w-4 h-4" /> Post Upcoming Show
-            </button>
+            {canPostShow && (
+              <button
+                onClick={() => setIsCreateShowModalOpen(true)}
+                className="flex items-center gap-2 bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-800 transition shadow-sm"
+              >
+                <Calendar className="w-4 h-4" /> Post Upcoming Show
+              </button>
+            )}
 
             <button
               onClick={() => isGuest ? setIsGateOpen(true) : setIsRequestModalOpen(true)}
@@ -542,10 +559,124 @@ export default function ExplorePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="lg:col-span-2">
-            <IndiaMap onSelectState={setSelectedState} selectedState={selectedState} />
+            <IndiaMap onSelectState={setSelectedState} selectedState={selectedState} artForms={safeArtForms} />
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex justify-center">
+            <div className="inline-flex rounded-xl border border-amber-200 bg-white p-1 shadow-sm" role="tablist" aria-label="Explore modes">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={exploreMode === 'artForms'}
+                onClick={() => setExploreMode('artForms')}
+                className={`px-5 py-2 text-sm font-bold rounded-lg transition ${exploreMode === 'artForms' ? 'bg-amber-900 text-white' : 'text-amber-900 hover:bg-amber-50'}`}
+              >
+                Art Forms
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={exploreMode === 'shows'}
+                onClick={() => setExploreMode('shows')}
+                className={`px-5 py-2 text-sm font-bold rounded-lg transition ${exploreMode === 'shows' ? 'bg-emerald-700 text-white' : 'text-emerald-800 hover:bg-emerald-50'}`}
+              >
+                Upcoming Shows
+              </button>
+            </div>
+          </div>
+
+          {exploreMode === 'shows' && <section className="lg:col-span-2 bg-white p-6 rounded-2xl border border-amber-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-extrabold text-amber-950 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-emerald-700" /> Upcoming Live Shows
+              </h2>
+              <div className="flex items-center gap-3">
+                <select
+                  value={showCategoryFilter}
+                  onChange={(e) => setShowCategoryFilter(e.target.value)}
+                  aria-label="Filter upcoming shows by category"
+                  className="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="All">All categories</option>
+                  <option value="Dance">Dance</option>
+                  <option value="Music">Music</option>
+                  <option value="Theatre">Theatre</option>
+                  <option value="Painting">Painting</option>
+                  <option value="Craft">Craft</option>
+                </select>
+                <span className="text-xs font-semibold text-gray-500">
+                  {filteredShows.length} {filteredShows.length === 1 ? 'Show' : 'Shows'} Scheduled
+                </span>
+              </div>
+            </div>
+
+            {loadingShows ? (
+              <div className="text-center py-6 text-xs text-amber-800 flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading upcoming shows...
+              </div>
+            ) : filteredShows.length === 0 ? (
+              <div className="p-6 bg-amber-50/40 rounded-xl text-center border border-amber-100 text-xs text-gray-600">
+                No live shows match your search criteria.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredShows.map((show, idx) => {
+                  if (!show) return null;
+                  const showImage = extractImageUrl(show.mediaUrl) || extractImageUrl(show.imageUrl) || extractImageUrl(show.image) || extractImageUrl(show.bannerUrl) || extractImageUrl(show.banner);
+                  const availableTickets = extractTickets(show);
+                  const isSoldOut = availableTickets <= 0;
+                  const showId = show._id || show.id || `show-${idx}`;
+
+                  return (
+                    <div key={showId} className="p-4 bg-[#FFFDF9] rounded-xl border border-amber-200/70 shadow-sm flex flex-col justify-between transition hover:shadow-md">
+                      <div>
+                        {show.mediaUrl && show.mediaType === 'video' ? (
+                          <video src={show.mediaUrl} controls className="mb-3 h-36 w-full rounded-lg border border-amber-100 object-cover" />
+                        ) : show.mediaUrl && show.mediaType === 'audio' ? (
+                          <div className="mb-3 flex h-36 items-center rounded-lg border border-amber-100 bg-amber-50 p-3"><audio src={show.mediaUrl} controls className="w-full" /></div>
+                        ) : showImage ? (
+                          <img src={showImage} alt={show.title || 'Show Image'} className="w-full h-36 object-cover rounded-lg mb-3 border border-amber-100" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                        ) : (
+                          <div className="w-full h-36 bg-amber-50 rounded-lg mb-3 border border-amber-100 flex items-center justify-center text-amber-800 text-xs font-medium">No Image Available</div>
+                        )}
+
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 font-bold rounded-md text-[10px] uppercase tracking-wider">{show.artFormName || show.category || 'Performance'}</span>
+                          <span className="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{show.ticketPrice || show.price ? `₹${show.ticketPrice || show.price}` : 'Free'}</span>
+                        </div>
+                        <h3 className="font-bold text-base text-gray-900">{show.title || 'Untitled Show'}</h3>
+                        {show.description && <p className="text-xs text-gray-600 line-clamp-2 mt-1">{show.description}</p>}
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-amber-100 space-y-3">
+                        <div className="text-[11px] text-gray-500 flex justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber-800" /><span className="truncate max-w-[120px]">{show.venue || show.location || 'TBD'}</span></div>
+                            <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-amber-800" /><span>{show.date ? new Date(show.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}</span></div>
+                          </div>
+                          <div className="text-right space-y-1"><div className="flex items-center justify-end gap-1.5"><Ticket className="w-3.5 h-3.5 text-amber-800" /><span>{availableTickets} left</span></div></div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => handleOpenPatron(show)} className="p-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl transition border border-rose-200 flex items-center justify-center shrink-0" title="Become a Patron / Support Artist"><Heart className="w-4 h-4 fill-rose-600 text-rose-600" /></button>
+                          <button onClick={() => setActiveDiscussionShow(show)} className="flex-1 px-2.5 py-2 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold rounded-xl text-xs transition border border-amber-200 flex items-center justify-center gap-1"><MessageSquare className="w-3.5 h-3.5" /> Discuss</button>
+                          <button onClick={() => handleBookTicket(show)} disabled={isSoldOut || bookingLoadingId === showId} className="flex-1 px-2.5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-gray-300 text-white font-bold rounded-xl text-xs transition shadow-sm">{isSoldOut ? 'Sold Out' : bookingLoadingId === showId ? 'Wait...' : 'Book Ticket'}</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>}
+
+          {exploreMode === 'artForms' && <div className="lg:col-span-2">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-extrabold text-amber-950">Discover Art Forms</h2>
+              <span className="text-xs font-semibold text-gray-500">
+                {filteredArtForms.length} {filteredArtForms.length === 1 ? 'Form' : 'Forms'}
+              </span>
+            </div>
             {loading ? (
               <div className="text-center py-16 text-amber-800 font-medium flex items-center justify-center gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" /> Loading Art Forms...
@@ -572,125 +703,9 @@ export default function ExplorePage() {
                 ))}
               </div>
             )}
-          </div>
+          </div>}
         </div>
 
-        <section className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-extrabold text-amber-950 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-700" /> Upcoming Live Shows
-            </h2>
-            <span className="text-xs font-semibold text-gray-500">
-              {filteredShows.length} {filteredShows.length === 1 ? 'Show' : 'Shows'} Scheduled
-            </span>
-          </div>
-
-          {loadingShows ? (
-            <div className="text-center py-6 text-xs text-amber-800 flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading upcoming shows...
-            </div>
-          ) : filteredShows.length === 0 ? (
-            <div className="p-6 bg-amber-50/40 rounded-xl text-center border border-amber-100 text-xs text-gray-600">
-              No live shows match your search criteria.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredShows.map((show, idx) => {
-                if (!show) return null;
-                const showImage = extractImageUrl(show.imageUrl) || extractImageUrl(show.image) || extractImageUrl(show.bannerUrl) || extractImageUrl(show.banner);
-                const availableTickets = extractTickets(show);
-                const isSoldOut = availableTickets <= 0;
-                const showId = show._id || show.id || `show-${idx}`;
-
-                return (
-                  <div
-                    key={showId}
-                    className="p-4 bg-[#FFFDF9] rounded-xl border border-amber-200/70 shadow-sm flex flex-col justify-between transition hover:shadow-md"
-                  >
-                    <div>
-                      {showImage ? (
-                        <img 
-                          src={showImage} 
-                          alt={show.title || 'Show Image'} 
-                          className="w-full h-36 object-cover rounded-lg mb-3 border border-amber-100"
-                          onError={(e) => {
-                            e.target.onerror = null; 
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-36 bg-amber-50 rounded-lg mb-3 border border-amber-100 flex items-center justify-center text-amber-800 text-xs font-medium">
-                          No Image Available
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 font-bold rounded-md text-[10px] uppercase tracking-wider">
-                          {show.artFormName || show.category || 'Performance'}
-                        </span>
-                        <span className="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          {show.ticketPrice || show.price ? `₹${show.ticketPrice || show.price}` : 'Free'}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-base text-gray-900">{show.title || 'Untitled Show'}</h3>
-                      {show.description && (
-                        <p className="text-xs text-gray-600 line-clamp-2 mt-1">{show.description}</p>
-                      )}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-amber-100 space-y-3">
-                      <div className="text-[11px] text-gray-500 flex justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-amber-800" />
-                            <span className="truncate max-w-[120px]">{show.venue || show.location || 'TBD'}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-amber-800" />
-                            <span>
-                              {show.date ? new Date(show.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Ticket className="w-3.5 h-3.5 text-amber-800" />
-                            <span>{availableTickets} left</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleOpenPatron(show)}
-                          className="p-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl transition border border-rose-200 flex items-center justify-center shrink-0"
-                          title="Become a Patron / Support Artist"
-                        >
-                          <Heart className="w-4 h-4 fill-rose-600 text-rose-600" />
-                        </button>
-
-                        <button
-                          onClick={() => setActiveDiscussionShow(show)}
-                          className="flex-1 px-2.5 py-2 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold rounded-xl text-xs transition border border-amber-200 flex items-center justify-center gap-1"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" /> Discuss
-                        </button>
-
-                        <button
-                          onClick={() => handleBookTicket(show)}
-                          disabled={isSoldOut || bookingLoadingId === showId}
-                          className="flex-1 px-2.5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-gray-300 text-white font-bold rounded-xl text-xs transition shadow-sm"
-                        >
-                          {isSoldOut ? 'Sold Out' : bookingLoadingId === showId ? 'Wait...' : 'Book Ticket'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
       </main>
 
       {/* Payment Confirmation Modal */}
@@ -888,10 +903,14 @@ export default function ExplorePage() {
 
                       {item.comment && <p className="text-sm text-gray-800 leading-relaxed pl-9">{item.comment}</p>}
 
-                      {(item.imageUrl || item.photo) && (
+                      {item.mediaUrl && item.mediaType === 'video' ? (
+                        <div className="pl-9 pt-1"><video src={item.mediaUrl} controls className="max-h-72 w-full rounded-xl border border-gray-200" /></div>
+                      ) : item.mediaUrl && item.mediaType === 'audio' ? (
+                        <div className="pl-9 pt-1"><audio src={item.mediaUrl} controls className="w-full" /></div>
+                      ) : (item.mediaUrl || item.imageUrl || item.photo) && (
                         <div className="pl-9 pt-1">
                           <img 
-                            src={item.imageUrl || item.photo} 
+                            src={item.mediaUrl || item.imageUrl || item.photo} 
                             alt="Discussion Attachment" 
                             className="w-full max-h-72 object-cover rounded-xl border border-gray-200" 
                           />
@@ -974,12 +993,12 @@ export default function ExplorePage() {
 
             {/* Input Footer */}
             <form onSubmit={handlePostComment} className="p-4 bg-white border-t border-amber-100 flex-shrink-0 space-y-3">
-              {commentPhoto && (
+              {(commentPhoto || commentMediaPreview) && (
                 <div className="relative inline-block pl-2">
-                  <img src={commentPhoto} alt="Preview" className="h-16 w-16 object-cover rounded-xl border border-amber-200 shadow-sm" />
+                  {commentMediaFile?.type.startsWith('video/') ? <video src={commentMediaPreview} controls className="h-16 w-24 rounded-xl border border-amber-200 object-cover" /> : commentMediaFile?.type.startsWith('audio/') ? <audio src={commentMediaPreview} controls className="w-48" /> : <img src={commentMediaPreview || commentPhoto} alt="Preview" className="h-16 w-16 rounded-xl border border-amber-200 object-cover" />}
                   <button 
                     type="button"
-                    onClick={() => setCommentPhoto(null)} 
+                    onClick={() => { setCommentPhoto(null); setCommentMediaFile(null); setCommentMediaPreview(''); }} 
                     className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow hover:bg-rose-700 transition"
                   >
                     <X className="w-3 h-3" />
@@ -1000,7 +1019,7 @@ export default function ExplorePage() {
               <div className="flex items-center gap-2">
                 <label className="cursor-pointer p-3 bg-amber-50 text-amber-900 rounded-xl hover:bg-amber-100 transition border border-amber-200" title="Upload Image File">
                   <ImageIcon className="w-4 h-4" />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                  <input type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleFileUpload} />
                 </label>
 
                 <button
@@ -1026,7 +1045,7 @@ export default function ExplorePage() {
 
                 <button 
                   type="submit"
-                  disabled={submittingComment || (!newCommentText.trim() && !commentPhoto && !imageUrlInput.trim())}
+                  disabled={submittingComment || (!newCommentText.trim() && !commentPhoto && !commentMediaFile && !imageUrlInput.trim())}
                   className="px-6 py-3 bg-emerald-700 text-white text-xs font-bold rounded-xl hover:bg-emerald-800 disabled:opacity-50 transition flex items-center gap-1.5 shadow-sm"
                 >
                   {submittingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post'}

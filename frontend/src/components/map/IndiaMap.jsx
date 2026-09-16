@@ -6,27 +6,66 @@ import {
   Marker
 } from 'react-simple-maps';
 
-const HIGH_RES_INDIA_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
+const INDIA_STATES_GEOJSON_URL = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
 
 const STATE_PINS = [
-  { state: "Uttarakhand", coordinates: [78.9629, 30.0668], count: 2, isLesserKnown: true },
-  { state: "Jammu & Kashmir", coordinates: [74.7973, 34.0837], count: 1, isLesserKnown: false },
-  { state: "Himachal Pradesh", coordinates: [77.1734, 31.1048], count: 1, isLesserKnown: true },
-  { state: "Punjab", coordinates: [75.3412, 31.1471], count: 1, isLesserKnown: false },
-  { state: "Rajasthan", coordinates: [74.2179, 27.0238], count: 3, isLesserKnown: false },
-  { state: "Gujarat", coordinates: [71.1924, 22.2587], count: 2, isLesserKnown: false },
-  { state: "Uttar Pradesh", coordinates: [80.9462, 26.8467], count: 2, isLesserKnown: false },
-  { state: "Madhya Pradesh", coordinates: [78.6569, 22.9734], count: 2, isLesserKnown: true },
-  { state: "Maharashtra", coordinates: [75.7139, 19.7515], count: 2, isLesserKnown: false },
-  { state: "Odisha", coordinates: [85.0985, 20.9517], count: 2, isLesserKnown: true },
-  { state: "West Bengal", coordinates: [87.8550, 22.9868], count: 2, isLesserKnown: true },
-  { state: "Assam", coordinates: [92.9376, 26.2006], count: 1, isLesserKnown: true },
-  { state: "Karnataka", coordinates: [75.7139, 15.3173], count: 2, isLesserKnown: false },
-  { state: "Kerala", coordinates: [76.2711, 10.8505], count: 3, isLesserKnown: false },
-  { state: "Tamil Nadu", coordinates: [78.6569, 11.1271], count: 3, isLesserKnown: false },
+  { state: 'Andaman and Nicobar Islands', coordinates: [92.75, 11.67] },
+  { state: 'Andhra Pradesh', coordinates: [79.74, 15.91] },
+  { state: 'Arunachal Pradesh', coordinates: [93.62, 27.10] },
+  { state: 'Assam', coordinates: [92.94, 26.20], count: 1, isLesserKnown: true },
+  { state: 'Bihar', coordinates: [85.31, 25.60] },
+  { state: 'Chandigarh', coordinates: [76.78, 30.73] },
+  { state: 'Chhattisgarh', coordinates: [81.86, 21.28] },
+  { state: 'Dadra and Nagar Haveli and Daman and Diu', coordinates: [72.83, 20.27] },
+  { state: 'Delhi', coordinates: [77.10, 28.61] },
+  { state: 'Goa', coordinates: [74.12, 15.49] },
+  { state: 'Gujarat', coordinates: [72.57, 23.02], count: 2 },
+  { state: 'Haryana', coordinates: [76.78, 29.06] },
+  { state: 'Himachal Pradesh', coordinates: [77.17, 31.10], count: 1, isLesserKnown: true },
+  { state: 'Jammu and Kashmir', coordinates: [75.15, 33.70], count: 1 },
+  { state: 'Jharkhand', coordinates: [85.32, 23.34] },
+  { state: 'Karnataka', coordinates: [76.95, 12.97], count: 2 },
+  { state: 'Kerala', coordinates: [76.27, 10.85], count: 3 },
+  { state: 'Ladakh', coordinates: [77.58, 34.15] },
+  { state: 'Lakshadweep', coordinates: [73.00, 10.56] },
+  { state: 'Madhya Pradesh', coordinates: [77.41, 23.25], count: 2, isLesserKnown: true },
+  { state: 'Maharashtra', coordinates: [73.85, 18.52], count: 2 },
+  { state: 'Manipur', coordinates: [93.94, 24.82] },
+  { state: 'Meghalaya', coordinates: [91.89, 25.57] },
+  { state: 'Mizoram', coordinates: [92.72, 23.73] },
+  { state: 'Nagaland', coordinates: [94.12, 25.67] },
+  { state: 'Odisha', coordinates: [85.84, 20.30], count: 2, isLesserKnown: true },
+  { state: 'Puducherry', coordinates: [79.81, 11.94] },
+  { state: 'Punjab', coordinates: [75.85, 30.90], count: 1 },
+  { state: 'Rajasthan', coordinates: [73.00, 26.90], count: 3 },
+  { state: 'Sikkim', coordinates: [88.61, 27.33] },
+  { state: 'Tamil Nadu', coordinates: [78.65, 11.13], count: 3 },
+  { state: 'Telangana', coordinates: [79.20, 17.90] },
+  { state: 'Tripura', coordinates: [91.28, 23.83] },
+  { state: 'Uttar Pradesh', coordinates: [80.95, 26.85], count: 2 },
+  { state: 'Uttarakhand', coordinates: [78.96, 30.07], count: 2, isLesserKnown: true },
+  { state: 'West Bengal', coordinates: [87.85, 23.00], count: 2, isLesserKnown: true },
 ];
 
-export default function IndiaMap({ onSelectState, selectedState }) {
+const STATE_NAME_ALIASES = {
+  'Jammu & Kashmir': 'Jammu and Kashmir',
+  'Jammu and Kashmir': 'Jammu and Kashmir',
+  'NCT of Delhi': 'Delhi',
+  'Orissa': 'Odisha',
+  'Pondicherry': 'Puducherry'
+};
+
+const getStateName = (geo) => STATE_NAME_ALIASES[geo.properties?.NAME_1 || geo.properties?.ST_NM || geo.properties?.name]
+  || geo.properties?.NAME_1
+  || geo.properties?.ST_NM
+  || geo.properties?.name;
+
+const normalizeState = (value) => String(value || '')
+  .toLowerCase()
+  .replace(/&/g, 'and')
+  .replace(/[^a-z0-9]/g, '');
+
+export default function IndiaMap({ onSelectState, selectedState, artForms = [] }) {
   const [hoveredState, setHoveredState] = useState(null);
 
   return (
@@ -60,24 +99,27 @@ export default function IndiaMap({ onSelectState, selectedState }) {
           }}
           className="w-full h-auto filter drop-shadow-md max-h-[600px]"
         >
-          <Geographies geography={HIGH_RES_INDIA_TOPO_URL}>
+          <Geographies geography={INDIA_STATES_GEOJSON_URL}>
             {({ geographies }) =>
-              geographies
-                .filter((geo) => geo.id === "356" || geo.properties.name === "India")
-                .map((geo) => (
+              geographies.map((geo) => {
+                const stateName = getStateName(geo);
+                const isSelected = selectedState === stateName;
+                return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    fill="#FFF8E1"
+                    onClick={() => onSelectState && onSelectState(isSelected ? null : stateName)}
+                    fill={isSelected ? '#F59E0B' : '#FFF8E1'}
                     stroke="#D84315"
-                    strokeWidth={1.2}
+                    strokeWidth={0.7}
                     style={{
                       default: { outline: 'none' },
                       hover: { fill: '#FDE68A', stroke: '#B45309', outline: 'none', cursor: 'pointer' },
                       pressed: { fill: '#F59E0B', outline: 'none' },
                     }}
                   />
-                ))
+                );
+              })
             }
           </Geographies>
 
@@ -85,7 +127,17 @@ export default function IndiaMap({ onSelectState, selectedState }) {
           {STATE_PINS.map((pin) => {
             const isSelected = selectedState === pin.state;
             const isHovered = hoveredState === pin.state;
-            const pinColor = pin.isLesserKnown ? '#C62828' : '#1A237E';
+            const matchingArtForms = artForms.filter((artForm) => {
+              const formState = artForm.state || artForm.region || artForm.location;
+              if (!formState) return false;
+              return normalizeState(formState).includes(normalizeState(pin.state))
+                || normalizeState(pin.state).includes(normalizeState(formState));
+            });
+            const artFormCount = matchingArtForms.length;
+            const hasLesserKnownForm = matchingArtForms.some((artForm) => Boolean(
+              artForm.isUnderrepresented || artForm.underrepresented || artForm.isLesserKnown
+            ));
+            const pinColor = hasLesserKnownForm ? '#C62828' : '#1A237E';
 
             return (
               <Marker
@@ -121,7 +173,7 @@ export default function IndiaMap({ onSelectState, selectedState }) {
                   textAnchor="middle"
                   className="pointer-events-none select-none"
                 >
-                  {pin.count}
+                  {artFormCount}
                 </text>
 
                 {(isHovered || isSelected) && (

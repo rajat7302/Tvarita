@@ -90,6 +90,10 @@ export const updateProfile = async (req, res) => {
     if (req.body.name) user.name = req.body.name;
 
     if (req.body.artistProfile) {
+      if (user.role !== 'artist' && user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only artist accounts can manage group members.' });
+      }
+
       const { teamName, teamDescription, members } = req.body.artistProfile;
 
       if (!user.artistProfile) {
@@ -110,6 +114,20 @@ export const updateProfile = async (req, res) => {
 
     const { password, ...userData } = updatedUser._doc;
     res.status(200).json({ message: 'Profile updated successfully', user: userData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

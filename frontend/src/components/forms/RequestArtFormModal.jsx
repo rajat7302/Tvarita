@@ -9,6 +9,7 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
     state: '',
     region: '',
     description: '',
+    isUnderrepresented: true,
   });
   const [imagePreview, setImagePreview] = useState(null); // Holds Base64 string
   const [imageUrl, setImageUrl] = useState('');
@@ -36,7 +37,7 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
   const resetForm = () => {
     handleRemoveImage();
     setImageUrl('');
-    setFormData({ name: '', category: 'Dance', state: '', region: '', description: '' });
+    setFormData({ name: '', category: 'Dance', state: '', region: '', description: '', isUnderrepresented: true });
     setSubmitted(false);
   };
 
@@ -54,6 +55,7 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
         state: formData.state,
         region: formData.region,
         description: formData.description,
+        isUnderrepresented: formData.isUnderrepresented,
         imageUrl: finalImageUrl,
       });
 
@@ -141,6 +143,16 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3.5 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 resize-none"
             ></textarea>
+
+            <label className="flex items-center gap-2 text-xs font-semibold text-amber-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isUnderrepresented}
+                onChange={(e) => setFormData({ ...formData, isUnderrepresented: e.target.checked })}
+                className="rounded accent-[#E65100]"
+              />
+              Mark this as a lesser-known art form
+            </label>
 
             <div className="space-y-1.5 pt-1">
               <label className="block text-xs font-bold text-gray-700">
