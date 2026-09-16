@@ -29,6 +29,11 @@ export const AuthProvider = ({ children }) => {
     setIsGuest(false);
   };
 
+  const updateUser = (userData) => {
+    localStorage.setItem('tvarita_user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
   const logout = () => {
     localStorage.removeItem('tvarita_user');
     localStorage.removeItem('tvarita_token');
@@ -44,7 +49,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isGuest, loading, login, logout, continueAsGuest }}>
+    <AuthContext.Provider value={{ user, isGuest, loading, login, updateUser, logout, continueAsGuest }}>
       {children}
     </AuthContext.Provider>
   );

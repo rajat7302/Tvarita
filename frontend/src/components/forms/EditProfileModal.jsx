@@ -1,29 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 
 export default function EditProfileModal({ isOpen, onClose, user, onUpdateSuccess }) {
-  if (!isOpen) return null;
-
-  const [name, setName] = useState(user?.name || '');
-  const [teamName, setTeamName] = useState(user?.artistProfile?.teamName || '');
-  const [teamDescription, setTeamDescription] = useState(user?.artistProfile?.teamDescription || '');
-  const [members, setMembers] = useState(user?.artistProfile?.members || []);
+  const [name, setName] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [teamDescription, setTeamDescription] = useState('');
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !user) return;
+
+    setName(user.name || '');
+    setTeamName(user.artistProfile?.teamName || '');
+    setTeamDescription(user.artistProfile?.teamDescription || '');
+    setMembers(user.artistProfile?.members || []);
+  }, [isOpen, user]);
+
+  if (!isOpen) return null;
 
   // Dynamic Member Handlers for Teams
   const handleAddMember = () => {
-    setMembers([...members, { memberName: '', roleInTeam: '' }]);
+    setMembers((current) => [...current, { memberName: '', roleInTeam: '' }]);
   };
 
   const handleMemberChange = (index, field, value) => {
-    const updated = [...members];
-    updated[index][field] = value;
-    setMembers(updated);
+    setMembers((current) => current.map((member, i) => (
+      i === index ? { ...member, [field]: value } : member
+    )));
   };
 
   const handleRemoveMember = (index) => {
-    setMembers(members.filter((_, i) => i !== index));
+    setMembers((current) => current.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -33,13 +42,11 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
     try {
       const payload = {
         name,
-        ...(user.role === 'artist' && {
-          artistProfile: {
-            teamName,
-            teamDescription,
-            members,
-          },
-        }),
+        artistProfile: {
+          teamName,
+          teamDescription,
+          members,
+        },
       };
 
       const res = await api.put('/auth/profile', payload);
@@ -74,9 +81,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
             />
           </div>
 
-          {/* Conditional Team/Artist Details */}
-          {user?.role === 'artist' && (
-            <div className="space-y-4 border-t border-amber-100 pt-4">
+          <div className="space-y-4 border-t border-amber-100 pt-4">
               <h4 className="text-sm font-bold text-amber-900">Artist / Team Information</h4>
 
               <div>
@@ -141,8 +146,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onUpdateSucces
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+          </div>
 
           <button
             type="submit"

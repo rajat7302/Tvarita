@@ -34,6 +34,7 @@ export const register = async (req, res) => {
         name: user.name, 
         email: user.email, 
         role: user.role,
+        artistProfile: user.artistProfile,
         isVerifiedArtist: user.isVerifiedArtist,
         preferences: user.preferences 
       } 
@@ -65,6 +66,7 @@ export const login = async (req, res) => {
         name: user.name, 
         email: user.email, 
         role: user.role,
+        artistProfile: user.artistProfile,
         isVerifiedArtist: user.isVerifiedArtist,
         preferences: user.preferences 
       } 
@@ -89,6 +91,14 @@ export const updateProfile = async (req, res) => {
 
     if (req.body.artistProfile) {
       const { teamName, teamDescription, members } = req.body.artistProfile;
+
+      if (!user.artistProfile) {
+        user.artistProfile = {
+          teamName: '',
+          teamDescription: '',
+          members: []
+        };
+      }
 
       if (teamName !== undefined) user.artistProfile.teamName = teamName;
       if (teamDescription !== undefined) user.artistProfile.teamDescription = teamDescription;

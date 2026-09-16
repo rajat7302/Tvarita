@@ -5,7 +5,7 @@ import { Compass, Edit3, LogOut, LogIn } from 'lucide-react';
 import EditProfileModal from '../forms/EditProfileModal';
 
 export default function Navbar() {
-  const { user, logout, setUser } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -73,7 +73,7 @@ export default function Navbar() {
           onClose={() => setIsEditModalOpen(false)}
           user={user}
           onUpdateSuccess={(updatedUser) => {
-            if (setUser) setUser(updatedUser);
+            updateUser(updatedUser);
           }}
         />
       )}
