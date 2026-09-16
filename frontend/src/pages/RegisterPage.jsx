@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState('user');
@@ -47,7 +47,7 @@ export default function RegisterPage() {
     };
 
     try {
-      await axios.post('http://localhost:5000/api/auth/register', payload);
+     await axios.post(`${API_BASE_URL}/auth/register`, payload);
       setSuccess(
         role === 'artist'
           ? 'Artist registration submitted! Awaiting Admin verification.'
