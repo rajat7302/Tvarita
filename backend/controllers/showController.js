@@ -90,23 +90,34 @@ export const createShow = async (req, res) => {
 // Book show tickets
 export const bookShowTickets = async (req, res) => {
   try {
-    const { ticketsCount = 1 } = req.body;
-    const show = await Show.findById(req.params.id);
+    const ticketCount = Number(req.body.ticketsCount ?? 1);
+
+    if (!Number.isInteger(ticketCount) || ticketCount < 1) {
+      return res.status(400).json({ message: 'Ticket count must be a positive whole number.' });
+    }
+
+    // The availability condition and decrement occur in one database operation,
+    // preventing concurrent requests from overselling the show.
+    const show = await Show.findOneAndUpdate(
+      { _id: req.params.id, availableTickets: { $gte: ticketCount } },
+      [
+        {
+          $set: {
+            availableTickets: { $subtract: ['$availableTickets', ticketCount] },
+            isSoldOut: { $lte: [{ $subtract: ['$availableTickets', ticketCount] }, 0] }
+          }
+        }
+      ],
+      { new: true }
+    );
 
     if (!show) {
-      return res.status(404).json({ message: 'Show not found.' });
+      const exists = await Show.exists({ _id: req.params.id });
+      return res.status(exists ? 400 : 404).json({
+        message: exists ? 'Not enough tickets available.' : 'Show not found.'
+      });
     }
 
-    if (show.availableTickets < ticketsCount) {
-      return res.status(400).json({ message: 'Not enough tickets available.' });
-    }
-
-    show.availableTickets -= ticketsCount;
-    if (show.availableTickets === 0) {
-      show.isSoldOut = true;
-    }
-
-    await show.save();
     res.status(200).json({ message: 'Tickets booked successfully.', show });
   } catch (error) {
     res.status(500).json({ message: error.message });

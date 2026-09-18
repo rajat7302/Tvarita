@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import PasswordStrengthMeter from '../components/common/PasswordStrengthMeter';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -129,6 +130,7 @@ export default function RegisterPage() {
               className="w-full p-2.5 text-sm border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
+            <PasswordStrengthMeter password={formData.password} />
           </div>
 
           {/* Artist Team Profile Fields */}

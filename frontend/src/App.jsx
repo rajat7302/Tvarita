@@ -8,6 +8,7 @@ import ExplorePage from './pages/ExplorePage';
 import ArtFormDetailPage from './pages/ArtFormDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRoute from './components/AdminRoute';
 
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/artform/:id" element={<ArtFormDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Protected Admin Route */}
             <Route element={<AdminRoute />}>
