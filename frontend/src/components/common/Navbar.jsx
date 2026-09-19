@@ -28,10 +28,9 @@ export default function Navbar() {
           <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
             <Link 
               to="/explore" 
-              className="flex items-center gap-1.5 text-sm font-semibold text-[#E65100] bg-amber-50 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-200 transition flex-shrink-0"
-              title="Explore"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold text-[#E65100] bg-amber-50 px-2 sm:px-3 py-1.5 rounded-xl border border-amber-200 transition flex-shrink-0 whitespace-nowrap"
             >
-              <Compass className="w-4 h-4 flex-shrink-0" /> <span className="hidden sm:inline">Explore</span>
+              <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> Explore
             </Link>
 
             {user ? (
@@ -42,10 +41,9 @@ export default function Navbar() {
 
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-semibold bg-amber-100 text-[#E65100] hover:bg-amber-200 rounded-lg transition flex-shrink-0"
-                  title="Edit Profile"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-semibold bg-amber-100 text-[#E65100] hover:bg-amber-200 rounded-lg transition flex-shrink-0 whitespace-nowrap"
                 >
-                  <Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> <span className="hidden sm:inline">Edit Profile</span>
+                  <Edit3 className="w-3.5 h-3.5 flex-shrink-0" /> <span className="sm:hidden">Edit</span><span className="hidden sm:inline">Edit Profile</span>
                 </button>
 
                 <button
