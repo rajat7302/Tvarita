@@ -1083,4 +1083,4 @@ export default function ExplorePage() {
       />
     </div>
   );
-}
+}//Fixed for mobile now
