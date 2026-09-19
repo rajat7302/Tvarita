@@ -6,13 +6,14 @@ import {
   Marker
 } from 'react-simple-maps';
 
-const INDIA_STATES_GEOJSON_URL = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
+// Official Survey of India complete boundary dataset (Includes full J&K and Ladakh)
+const INDIA_STATES_GEOJSON_URL = 'https://raw.githubusercontent.com/udit-001/india-maps-data/master/geojson/india.geojson';
 
 const STATE_PINS = [
   { state: 'Andaman and Nicobar Islands', coordinates: [92.75, 11.67] },
   { state: 'Andhra Pradesh', coordinates: [79.74, 15.91] },
-  { state: 'Arunachal Pradesh', coordinates: [93.62, 27.10] },
-  { state: 'Assam', coordinates: [92.94, 26.20], count: 1, isLesserKnown: true },
+  { state: 'Arunachal Pradesh', coordinates: [94.60, 28.10] }, // Adjusted for centering
+  { state: 'Assam', coordinates: [92.90, 26.00], count: 1, isLesserKnown: true }, // Adjusted for centering
   { state: 'Bihar', coordinates: [85.31, 25.60] },
   { state: 'Chandigarh', coordinates: [76.78, 30.73] },
   { state: 'Chhattisgarh', coordinates: [81.86, 21.28] },
@@ -22,7 +23,7 @@ const STATE_PINS = [
   { state: 'Gujarat', coordinates: [72.57, 23.02], count: 2 },
   { state: 'Haryana', coordinates: [76.78, 29.06] },
   { state: 'Himachal Pradesh', coordinates: [77.17, 31.10], count: 1, isLesserKnown: true },
-  { state: 'Jammu and Kashmir', coordinates: [75.15, 33.70], count: 1 },
+  { state: 'Jammu and Kashmir', coordinates: [74.80, 33.70], count: 1 },
   { state: 'Jharkhand', coordinates: [85.32, 23.34] },
   { state: 'Karnataka', coordinates: [76.95, 12.97], count: 2 },
   { state: 'Kerala', coordinates: [76.27, 10.85], count: 3 },
@@ -30,18 +31,18 @@ const STATE_PINS = [
   { state: 'Lakshadweep', coordinates: [73.00, 10.56] },
   { state: 'Madhya Pradesh', coordinates: [77.41, 23.25], count: 2, isLesserKnown: true },
   { state: 'Maharashtra', coordinates: [73.85, 18.52], count: 2 },
-  { state: 'Manipur', coordinates: [93.94, 24.82] },
-  { state: 'Meghalaya', coordinates: [91.89, 25.57] },
-  { state: 'Mizoram', coordinates: [92.72, 23.73] },
-  { state: 'Nagaland', coordinates: [94.12, 25.67] },
+  { state: 'Manipur', coordinates: [93.90, 24.70] }, // Adjusted for centering
+  { state: 'Meghalaya', coordinates: [91.20, 25.40] }, // Adjusted for centering
+  { state: 'Mizoram', coordinates: [92.80, 23.30] }, // Adjusted for centering
+  { state: 'Nagaland', coordinates: [94.30, 26.15] }, // Adjusted for centering
   { state: 'Odisha', coordinates: [85.84, 20.30], count: 2, isLesserKnown: true },
   { state: 'Puducherry', coordinates: [79.81, 11.94] },
   { state: 'Punjab', coordinates: [75.85, 30.90], count: 1 },
   { state: 'Rajasthan', coordinates: [73.00, 26.90], count: 3 },
-  { state: 'Sikkim', coordinates: [88.61, 27.33] },
+  { state: 'Sikkim', coordinates: [88.50, 27.55] }, // Adjusted for centering
   { state: 'Tamil Nadu', coordinates: [78.65, 11.13], count: 3 },
   { state: 'Telangana', coordinates: [79.20, 17.90] },
-  { state: 'Tripura', coordinates: [91.28, 23.83] },
+  { state: 'Tripura', coordinates: [91.75, 23.75] }, // Adjusted for centering
   { state: 'Uttar Pradesh', coordinates: [80.95, 26.85], count: 2 },
   { state: 'Uttarakhand', coordinates: [78.96, 30.07], count: 2, isLesserKnown: true },
   { state: 'West Bengal', coordinates: [87.85, 23.00], count: 2, isLesserKnown: true },
@@ -49,16 +50,20 @@ const STATE_PINS = [
 
 const STATE_NAME_ALIASES = {
   'Jammu & Kashmir': 'Jammu and Kashmir',
-  'Jammu and Kashmir': 'Jammu and Kashmir',
   'NCT of Delhi': 'Delhi',
   'Orissa': 'Odisha',
   'Pondicherry': 'Puducherry'
 };
 
-const getStateName = (geo) => STATE_NAME_ALIASES[geo.properties?.NAME_1 || geo.properties?.ST_NM || geo.properties?.name]
-  || geo.properties?.NAME_1
-  || geo.properties?.ST_NM
-  || geo.properties?.name;
+const getStateName = (geo) => {
+  const rawName = geo.properties?.st_nm 
+    || geo.properties?.ST_NM 
+    || geo.properties?.NAME_1 
+    || geo.properties?.name 
+    || geo.properties?.state_name;
+    
+  return STATE_NAME_ALIASES[rawName] || rawName;
+};
 
 const normalizeState = (value) => String(value || '')
   .toLowerCase()
