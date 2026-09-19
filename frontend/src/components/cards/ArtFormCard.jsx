@@ -45,9 +45,9 @@ export default function ArtFormCard({ artForm }) {
           </p>
         </div>
 
-        <div className="pt-3 border-t border-amber-50 flex items-center justify-between text-xs font-medium text-amber-900">
-          <span>Region: {artForm.region || 'Regional'}</span>
-          <span className="group-hover:translate-x-1 transition-transform">Explore →</span>
+        <div className="pt-3 border-t border-amber-50 flex items-center justify-between gap-2 text-xs font-medium text-amber-900">
+          <span className="truncate min-w-0" title={`Region: ${artForm.region || 'Regional'}`}>Region: {artForm.region || 'Regional'}</span>
+          <span className="flex-shrink-0 group-hover:translate-x-1 transition-transform">Explore →</span>
         </div>
       </div>
     </Link>

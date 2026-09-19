@@ -85,9 +85,9 @@ export default function ArtFormDetailPage() {
         <img 
           src={artForm.images?.[0] || 'https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&q=80'} 
           alt={artForm.name} 
-          className="w-full h-full object-cover opacity-40"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10 flex items-end">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
             <span className="bg-[#E65100] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               {artForm.category}
