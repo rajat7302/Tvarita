@@ -486,28 +486,28 @@ export default function ExplorePage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => handleOpenPatron(null)}
-              className="flex items-center gap-2 bg-rose-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-800 transition shadow-sm"
+              className="flex items-center justify-center gap-2 bg-rose-700 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm hover:bg-rose-800 transition shadow-sm flex-1 sm:flex-none min-w-[9.5rem] sm:min-w-0"
             >
-              <Heart className="w-4 h-4 fill-white" /> Become a Patron
+              <Heart className="w-4 h-4 fill-white flex-shrink-0" /> Become a Patron
             </button>
 
             {canPostShow && (
               <button
                 onClick={() => setIsCreateShowModalOpen(true)}
-                className="flex items-center gap-2 bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-800 transition shadow-sm"
+                className="flex items-center justify-center gap-2 bg-emerald-700 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm hover:bg-emerald-800 transition shadow-sm flex-1 sm:flex-none min-w-[9.5rem] sm:min-w-0"
               >
-                <Calendar className="w-4 h-4" /> Post Upcoming Show
+                <Calendar className="w-4 h-4 flex-shrink-0" /> Post Upcoming Show
               </button>
             )}
 
             <button
               onClick={() => isGuest ? setIsGateOpen(true) : setIsRequestModalOpen(true)}
-              className="flex items-center gap-2 bg-[#E65100] text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-[#D84315] transition shadow-sm"
+              className="flex items-center justify-center gap-2 bg-[#E65100] text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm hover:bg-[#D84315] transition shadow-sm flex-1 sm:flex-none min-w-[9.5rem] sm:min-w-0"
             >
-              <PlusCircle className="w-4 h-4" /> Propose Missing Art Form
+              <PlusCircle className="w-4 h-4 flex-shrink-0" /> Propose Missing Art Form
             </button>
           </div>
         </div>
@@ -515,8 +515,8 @@ export default function ExplorePage() {
         <div className="space-y-4">
           <SearchBar value={search} onChange={(val) => setSearch(typeof val === 'string' ? val : val?.target?.value || '')} />
 
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-amber-100 shadow-sm">
-            <div className="flex items-center gap-2 overflow-x-auto py-1">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-2xl border border-amber-100 shadow-sm">
+            <div className="flex items-center gap-2 overflow-x-auto py-1 -mx-1 px-1">
               <Filter className="w-4 h-4 text-amber-800 flex-shrink-0" />
               {['All', 'Dance', 'Music', 'Theatre', 'Craft'].map((cat) => (
                 <button
@@ -533,7 +533,7 @@ export default function ExplorePage() {
               ))}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               {activeStateFilter && (
                 <button
                   onClick={() => setSelectedState(null)}
@@ -816,28 +816,37 @@ export default function ExplorePage() {
 
       {/* Discussion Modal */}
       {activeDiscussionShow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[85vh] border border-amber-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+          <div className="bg-white w-full max-w-4xl rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-full sm:h-[85vh] border border-amber-100">
             
             {/* Modal Header */}
-            <div className="p-5 border-b border-amber-100 flex items-center justify-between bg-amber-50/50 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-100 rounded-xl text-amber-900">
-                  <MessageSquare className="w-5 h-5" />
+            <div className="p-3 sm:p-5 border-b border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 bg-amber-50/50 flex-shrink-0">
+              <div className="flex items-center justify-between sm:justify-start gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2.5 bg-amber-100 rounded-xl text-amber-900 flex-shrink-0">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-extrabold text-base sm:text-lg text-gray-900 truncate">
+                      Discussion: {activeDiscussionShow.title}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {comments.length} {comments.length === 1 ? 'comment' : 'comments'} in this thread
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-lg text-gray-900">
-                    Discussion: {activeDiscussionShow.title}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {comments.length} {comments.length === 1 ? 'comment' : 'comments'} in this thread
-                  </p>
-                </div>
+
+                <button 
+                  onClick={() => setActiveDiscussionShow(null)} 
+                  className="p-2 text-gray-400 hover:text-gray-900 hover:bg-amber-100/50 rounded-xl transition flex-shrink-0 sm:hidden"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-amber-200 text-xs font-bold text-amber-900">
-                  <span className="px-2 text-gray-400 font-semibold text-[11px]">Sort:</span>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-amber-200 text-xs font-bold text-amber-900 overflow-x-auto max-w-full">
+                  <span className="px-2 text-gray-400 font-semibold text-[11px] flex-shrink-0">Sort:</span>
                   {[
                     { id: 'newest', label: 'Newest' },
                     { id: 'oldest', label: 'Oldest' },
@@ -847,7 +856,7 @@ export default function ExplorePage() {
                       key={sort.id}
                       type="button"
                       onClick={() => setSortBy(sort.id)}
-                      className={`px-3 py-1 rounded-lg transition ${
+                      className={`px-2.5 sm:px-3 py-1 rounded-lg transition whitespace-nowrap flex-shrink-0 ${
                         sortBy === sort.id
                           ? 'bg-amber-900 text-white shadow-sm'
                           : 'hover:bg-amber-50 text-gray-700'
@@ -860,7 +869,7 @@ export default function ExplorePage() {
 
                 <button 
                   onClick={() => setActiveDiscussionShow(null)} 
-                  className="p-2 text-gray-400 hover:text-gray-900 hover:bg-amber-100/50 rounded-xl transition"
+                  className="p-2 text-gray-400 hover:text-gray-900 hover:bg-amber-100/50 rounded-xl transition flex-shrink-0 hidden sm:block"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -868,7 +877,7 @@ export default function ExplorePage() {
             </div>
             
             {/* Discussion List Stream */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 bg-gray-50/50">
               {loadingComments ? (
                 <div className="flex items-center justify-center py-16 text-amber-800 gap-2 text-xs font-semibold">
                   <Loader2 className="w-5 h-5 animate-spin" /> Loading discussion thread...
@@ -901,14 +910,14 @@ export default function ExplorePage() {
                         </span>
                       </div>
 
-                      {item.comment && <p className="text-sm text-gray-800 leading-relaxed pl-9">{item.comment}</p>}
+                      {item.comment && <p className="text-sm text-gray-800 leading-relaxed pl-2 sm:pl-9">{item.comment}</p>}
 
                       {item.mediaUrl && item.mediaType === 'video' ? (
-                        <div className="pl-9 pt-1"><video src={item.mediaUrl} controls className="max-h-72 w-full rounded-xl border border-gray-200" /></div>
+                        <div className="pl-2 sm:pl-9 pt-1"><video src={item.mediaUrl} controls className="max-h-72 w-full rounded-xl border border-gray-200" /></div>
                       ) : item.mediaUrl && item.mediaType === 'audio' ? (
-                        <div className="pl-9 pt-1"><audio src={item.mediaUrl} controls className="w-full" /></div>
+                        <div className="pl-2 sm:pl-9 pt-1"><audio src={item.mediaUrl} controls className="w-full" /></div>
                       ) : (item.mediaUrl || item.imageUrl || item.photo) && (
-                        <div className="pl-9 pt-1">
+                        <div className="pl-2 sm:pl-9 pt-1">
                           <img 
                             src={item.mediaUrl || item.imageUrl || item.photo} 
                             alt="Discussion Attachment" 
@@ -918,7 +927,7 @@ export default function ExplorePage() {
                       )}
 
                       {/* Action Bar: Likes & Reply Toggle */}
-                      <div className="pl-9 flex items-center gap-6 text-xs text-gray-500 font-semibold pt-1">
+                      <div className="pl-2 sm:pl-9 flex items-center gap-4 sm:gap-6 text-xs text-gray-500 font-semibold pt-1">
                         <button 
                           onClick={() => handleLikeReview(reviewId)}
                           className={`flex items-center gap-1.5 transition ${isLiked ? 'text-rose-600 font-bold' : 'hover:text-rose-600'}`}
@@ -939,7 +948,7 @@ export default function ExplorePage() {
 
                       {/* Inline Reply Input Box */}
                       {item.showReplyBox && (
-                        <div className="pl-9 pt-2 space-y-2">
+                        <div className="pl-2 sm:pl-9 pt-2 space-y-2">
                           <input
                             type="text"
                             placeholder="Write a reply..."
@@ -992,7 +1001,7 @@ export default function ExplorePage() {
             </div>
 
             {/* Input Footer */}
-            <form onSubmit={handlePostComment} className="p-4 bg-white border-t border-amber-100 flex-shrink-0 space-y-3">
+            <form onSubmit={handlePostComment} className="p-2.5 sm:p-4 bg-white border-t border-amber-100 flex-shrink-0 space-y-2 sm:space-y-3">
               {(commentPhoto || commentMediaPreview) && (
                 <div className="relative inline-block pl-2">
                   {commentMediaFile?.type.startsWith('video/') ? <video src={commentMediaPreview} controls className="h-16 w-24 rounded-xl border border-amber-200 object-cover" /> : commentMediaFile?.type.startsWith('audio/') ? <audio src={commentMediaPreview} controls className="w-48" /> : <img src={commentMediaPreview || commentPhoto} alt="Preview" className="h-16 w-16 rounded-xl border border-amber-200 object-cover" />}
@@ -1016,8 +1025,8 @@ export default function ExplorePage() {
                 />
               )}
 
-              <div className="flex items-center gap-2">
-                <label className="cursor-pointer p-3 bg-amber-50 text-amber-900 rounded-xl hover:bg-amber-100 transition border border-amber-200" title="Upload Image File">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <label className="cursor-pointer p-2.5 sm:p-3 bg-amber-50 text-amber-900 rounded-xl hover:bg-amber-100 transition border border-amber-200 flex-shrink-0" title="Upload Image File">
                   <ImageIcon className="w-4 h-4" />
                   <input type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleFileUpload} />
                 </label>
@@ -1025,7 +1034,7 @@ export default function ExplorePage() {
                 <button
                   type="button"
                   onClick={() => setIsUrlMode(!isUrlMode)}
-                  className={`p-3 rounded-xl border transition ${
+                  className={`p-2.5 sm:p-3 rounded-xl border transition flex-shrink-0 ${
                     isUrlMode 
                       ? 'bg-amber-100 border-amber-300 text-[#E65100]' 
                       : 'border-gray-200 text-gray-500 hover:bg-gray-50'
@@ -1040,13 +1049,13 @@ export default function ExplorePage() {
                   placeholder="Ask a question or share a thought..." 
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  className="flex-1 text-sm px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50/50"
+                  className="flex-1 min-w-0 text-sm px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50/50"
                 />
 
                 <button 
                   type="submit"
                   disabled={submittingComment || (!newCommentText.trim() && !commentPhoto && !commentMediaFile && !imageUrlInput.trim())}
-                  className="px-6 py-3 bg-emerald-700 text-white text-xs font-bold rounded-xl hover:bg-emerald-800 disabled:opacity-50 transition flex items-center gap-1.5 shadow-sm"
+                  className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-emerald-700 text-white text-xs font-bold rounded-xl hover:bg-emerald-800 disabled:opacity-50 transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
                 >
                   {submittingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post'}
                 </button>
@@ -1074,4 +1083,4 @@ export default function ExplorePage() {
       />
     </div>
   );
-}
+}//Fixed for mobile now
