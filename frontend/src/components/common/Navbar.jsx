@@ -27,8 +27,8 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
-            <Link 
-              to="/explore" 
+            <Link
+              to="/explore"
               className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold text-[#E65100] bg-amber-50 px-2 sm:px-3 py-1.5 rounded-xl border border-amber-200 transition flex-shrink-0 whitespace-nowrap"
             >
               <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> Explore
@@ -36,9 +36,20 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-                <Link to={`/profile/${user._id || user.id}`} className="hidden md:flex items-center gap-2 text-sm font-medium text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 max-w-[10rem] truncate">
-                  {user.profilePhotoUrl && <ImageLightbox src={user.profilePhotoUrl} alt={`${user.name} profile photo`} className="h-6 w-6 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}
-                  {user.name}
+                <Link
+                  to={`/profile/${user._id || user.id}`}
+                  className="hidden md:flex items-center gap-2 text-sm font-medium text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 max-w-[10rem]"
+                >
+                  {user.profilePhotoUrl && (
+                    <ImageLightbox
+                      src={user.profilePhotoUrl}
+                      alt={`${user.name} profile photo`}
+                      showExpandIcon={false}
+                      className="h-6 w-6 shrink-0 rounded-full overflow-hidden"
+                      imageClassName="h-full w-full rounded-full object-cover"
+                    />
+                  )}
+                  <span className="truncate">{user.name}</span>
                 </Link>
 
                 <Link to="/tickets" className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 sm:px-3" title="My Tickets">
