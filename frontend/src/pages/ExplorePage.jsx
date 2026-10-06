@@ -12,6 +12,7 @@ import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { PreferencesContext } from '../context/PreferencesContext';
 import MediaAttachment from '../components/common/MediaAttachment';
+import ImageLightbox from '../components/common/ImageLightbox';
 import { Link } from 'react-router-dom';
 import { 
   PlusCircle, 
@@ -79,7 +80,7 @@ function ReplyItem({ reply, reviewId, onLike, onReplySubmit, onEditReply, onDele
     <div className="ml-6 pl-4 border-l-2 border-amber-200/60 space-y-2 mt-3">
       <div className="bg-[#FFFDF9] p-3 rounded-xl border border-amber-100/70 shadow-sm space-y-1.5">
         <div className="flex justify-between items-center text-xs">
-          <span className="flex items-center gap-2">{reply.userId?.profilePhotoUrl && <img src={reply.userId.profilePhotoUrl} alt="" className="h-5 w-5 rounded-full object-cover" />}<Link to={`/profile/${reply.userId?._id || reply.userId}`} className="font-bold text-emerald-800 hover:underline">{reply.userId?.name || reply.userName || reply.author || 'User'}</Link></span>
+          <span className="flex items-center gap-2">{reply.userId?.profilePhotoUrl && <ImageLightbox src={reply.userId.profilePhotoUrl} alt={`${reply.userId.name} profile photo`} className="h-5 w-5 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}<Link to={`/profile/${reply.userId?._id || reply.userId}`} className="font-bold text-emerald-800 hover:underline">{reply.userId?.name || reply.userName || reply.author || 'User'}</Link></span>
           <span className="text-[10px] text-gray-400">
             {reply.createdAt ? new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
           </span>
@@ -810,7 +811,7 @@ export default function ExplorePage() {
                         {show.mediaUrl && ['video', 'audio', 'document'].includes(show.mediaType) ? (
                           <MediaAttachment url={show.mediaUrl} type={show.mediaType} name={show.mediaFileName} className="mb-3 h-36 border border-amber-100" />
                         ) : showImage ? (
-                          <img src={showImage} alt={show.title || 'Show Image'} className="w-full h-36 object-cover rounded-lg mb-3 border border-amber-100" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                          <MediaAttachment url={showImage} type="image" name={`${show.title || 'Show'} image`} className="mb-3 h-36 border border-amber-100" />
                         ) : (
                           <div className="w-full h-36 bg-amber-50 rounded-lg mb-3 border border-amber-100 flex items-center justify-center text-amber-800 text-xs font-medium">No Image Available</div>
                         )}
@@ -1083,7 +1084,7 @@ export default function ExplorePage() {
                     >
                       <div className="flex justify-between items-center text-xs">
                         <div className="flex items-center gap-2">
-                          {item.userId?.profilePhotoUrl ? <img src={item.userId.profilePhotoUrl} alt="" className="h-7 w-7 rounded-full object-cover" /> : <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">{(item.userName || item.author || 'U').charAt(0).toUpperCase()}</div>}
+                          {item.userId?.profilePhotoUrl ? <ImageLightbox src={item.userId.profilePhotoUrl} alt={`${item.userId.name} profile photo`} className="h-7 w-7 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" /> : <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">{(item.userName || item.author || 'U').charAt(0).toUpperCase()}</div>}
                           <Link to={`/profile/${item.userId?._id || item.userId}`} className="font-bold text-gray-900 hover:underline">{item.userName || item.author || 'User'}</Link>
                         </div>
                         <span className="text-[11px] text-gray-400">

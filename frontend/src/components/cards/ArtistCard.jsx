@@ -1,12 +1,13 @@
 import React from 'react';
 import { User, Users } from 'lucide-react';
+import ImageLightbox from '../common/ImageLightbox';
 
 export default function ArtistCard({ artist }) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm flex items-center gap-4">
       <div className="w-16 h-16 rounded-2xl bg-amber-100 overflow-hidden flex-shrink-0 flex items-center justify-center text-amber-800 font-bold text-xl">
         {artist.images && artist.images[0] ? (
-          <img src={artist.images[0]} alt={artist.name} className="w-full h-full object-cover" />
+          <ImageLightbox src={artist.images[0]} alt={`${artist.name} photo`} className="h-full w-full" imageClassName="h-full w-full object-cover" />
         ) : (
           artist.type === 'group' ? <Users className="w-8 h-8" /> : <User className="w-8 h-8" />
         )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Sparkles } from 'lucide-react';
+import ImageLightbox from '../common/ImageLightbox';
 
 export default function ArtFormCard({ artForm }) {
   return (
@@ -10,10 +11,11 @@ export default function ArtFormCard({ artForm }) {
     >
       <div className="relative h-48 bg-amber-100 overflow-hidden">
         {artForm.images && artForm.images[0] ? (
-          <img 
-            src={artForm.images[0]} 
-            alt={artForm.name} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+          <ImageLightbox
+            src={artForm.images[0]}
+            alt={`${artForm.name} photo`}
+            className="h-full w-full"
+            imageClassName="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-amber-700 font-bold text-xl">

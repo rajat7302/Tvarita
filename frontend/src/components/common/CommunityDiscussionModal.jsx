@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Flag, Heart, Loader2, MessageCircle, Send, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import ImageLightbox from './ImageLightbox';
 
 const idOf = (value) => value?._id || value?.id || value;
 
@@ -61,7 +62,7 @@ function ReplyNode({ reply, targetType, commentId, currentUserId, onChanged }) {
     <div className="ml-5 mt-3 border-l-2 border-amber-200 pl-3 space-y-2">
       <div className="rounded-xl bg-[#FFFDF9] p-3 border border-amber-100">
         <div className="flex justify-between text-xs">
-          <div className="flex items-center gap-2">{reply.userId?.profilePhotoUrl && <img src={reply.userId.profilePhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" />}{reply.userId && <Link to={`/profile/${idOf(reply.userId)}`} className="font-bold text-emerald-800 hover:underline">{reply.userId?.name || reply.userName || 'User'}</Link>}{!reply.userId && <span className="font-bold text-emerald-800">{reply.userName || 'User'}</span>}</div>
+          <div className="flex items-center gap-2">{reply.userId?.profilePhotoUrl && <ImageLightbox src={reply.userId.profilePhotoUrl} alt={`${reply.userId.name} profile photo`} className="h-6 w-6 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}{reply.userId && <Link to={`/profile/${idOf(reply.userId)}`} className="font-bold text-emerald-800 hover:underline">{reply.userId?.name || reply.userName || 'User'}</Link>}{!reply.userId && <span className="font-bold text-emerald-800">{reply.userName || 'User'}</span>}</div>
           <span className="text-gray-400">{reply.createdAt ? new Date(reply.createdAt).toLocaleDateString() : ''}</span>
         </div>
         <p className="mt-1 text-sm text-gray-800">{reply.comment}</p>
@@ -199,7 +200,7 @@ export default function CommunityDiscussionModal({ isOpen, onClose, targetType, 
             const isOwner = String(idOf(comment.userId)) === String(currentUserId);
             return (
               <div key={commentId} className="mb-3 rounded-xl border border-amber-100 bg-white p-3">
-                <div className="flex justify-between text-xs"><div className="flex items-center gap-2">{comment.userId?.profilePhotoUrl && <img src={comment.userId.profilePhotoUrl} alt="" className="h-7 w-7 rounded-full object-cover" />}{comment.userId ? <Link to={`/profile/${idOf(comment.userId)}`} className="font-bold text-amber-900 hover:underline">{comment.userName || 'User'}</Link> : <span className="font-bold text-amber-900">{comment.userName || 'User'}</span>}</div><span className="text-gray-400">{comment.editedAt ? 'Edited · ' : ''}{comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}</span></div>
+                <div className="flex justify-between text-xs"><div className="flex items-center gap-2">{comment.userId?.profilePhotoUrl && <ImageLightbox src={comment.userId.profilePhotoUrl} alt={`${comment.userId.name} profile photo`} className="h-7 w-7 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}{comment.userId ? <Link to={`/profile/${idOf(comment.userId)}`} className="font-bold text-amber-900 hover:underline">{comment.userName || 'User'}</Link> : <span className="font-bold text-amber-900">{comment.userName || 'User'}</span>}</div><span className="text-gray-400">{comment.editedAt ? 'Edited · ' : ''}{comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}</span></div>
                 {comment.userId?.bio && <p className="mt-1 text-[11px] text-gray-500">{comment.userId.bio}</p>}
                 <p className="mt-1 text-sm text-gray-800">{comment.comment}</p>
                 <div className="mt-2 flex gap-4 text-xs font-semibold text-gray-500">
