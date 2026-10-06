@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import ArtistCard from '../components/cards/ArtistCard';
 import ShowCard from '../components/cards/ShowCard';
@@ -11,14 +11,17 @@ import ReviewModal from '../components/forms/ReviewModal';
 import GuestGateModal from '../components/common/GuestGateModal';
 import CommunityDiscussionModal from '../components/common/CommunityDiscussionModal';
 import ImageLightbox from '../components/common/ImageLightbox';
-import { 
-  getArtFormById, 
-  getShowsByArtForm, 
-  getPostsByArtForm, 
-  getExperiencesByArtForm 
+import {
+  getArtFormById,
+  getShowsByArtForm,
+  getPostsByArtForm,
+  getExperiencesByArtForm
 } from '../services/artFormService';
 import { AuthContext } from '../context/AuthContext';
 import { MapPin, Calendar, BookOpen, Plus, HeartHandshake } from 'lucide-react';
+
+const FALLBACK_BANNER =
+  'https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&q=80';
 
 export default function ArtFormDetailPage() {
   const { id } = useParams();
@@ -82,21 +85,29 @@ export default function ArtFormDetailPage() {
       <Navbar />
 
       {/* Banner */}
-      <div className="relative h-80 bg-amber-900 text-white overflow-hidden">
-        <ImageLightbox
-          src={artForm.images?.[0] || 'https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&q=80'}
-          alt={`${artForm.name} performance photo`}
-          className="absolute inset-0 h-full w-full"
-          imageClassName="h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10 flex items-end">
+      <div className="relative h-72 sm:h-80 bg-amber-900 text-white overflow-hidden">
+        {/* Photo layer. object-[50%_30%] keeps faces in frame instead of cropping to the middle */}
+        <div className="absolute inset-0">
+          <ImageLightbox
+            src={artForm.images?.[0] || FALLBACK_BANNER}
+            alt={`${artForm.name} performance photo`}
+            className="h-full w-full"
+            imageClassName="h-full w-full object-cover object-[50%_30%]"
+          />
+        </div>
+
+        {/* Text layer. pointer-events-none lets clicks pass through to the photo,
+            and the gradient now only darkens the bottom behind the title */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent pt-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
             <span className="bg-[#E65100] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               {artForm.category}
             </span>
             <h1 className="text-4xl sm:text-5xl font-extrabold mt-2 mb-2">{artForm.name}</h1>
             <div className="flex items-center gap-4 text-sm font-medium text-amber-200">
-              <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-amber-400" /> {artForm.state} ({artForm.region})</span>
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4 text-amber-400" /> {artForm.state} ({artForm.region})
+              </span>
             </div>
           </div>
         </div>
@@ -132,10 +143,10 @@ export default function ArtFormDetailPage() {
             ) : (
               <div className="space-y-3">
                 {shows.map(show => (
-                  <ShowCard 
-                    key={show._id} 
-                    show={show} 
-                    onBook={(s) => handleProtectedAction('book ticket passes', () => { setSelectedShow(s); setIsBookingModalOpen(true); })} 
+                  <ShowCard
+                    key={show._id}
+                    show={show}
+                    onBook={(s) => handleProtectedAction('book ticket passes', () => { setSelectedShow(s); setIsBookingModalOpen(true); })}
                   />
                 ))}
               </div>
@@ -163,7 +174,11 @@ export default function ArtFormDetailPage() {
             ) : (
               <div className="space-y-4">
                 {posts.map(post => (
-                  <StoryCard key={post._id} post={post} onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'post', item }))} />
+                  <StoryCard
+                    key={post._id}
+                    post={post}
+                    onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'post', item }))}
+                  />
                 ))}
               </div>
             )}
@@ -190,7 +205,11 @@ export default function ArtFormDetailPage() {
             ) : (
               <div className="space-y-3">
                 {experiences.map(exp => (
-                  <ExperienceCard key={exp._id} experience={exp} onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'experience', item }))} />
+                  <ExperienceCard
+                    key={exp._id}
+                    experience={exp}
+                    onDiscuss={(item) => handleProtectedAction('join the discussion', () => setDiscussionTarget({ type: 'experience', item }))}
+                  />
                 ))}
               </div>
             )}
