@@ -11,6 +11,8 @@ import { getShows } from '../services/showService';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { PreferencesContext } from '../context/PreferencesContext';
+import MediaAttachment from '../components/common/MediaAttachment';
+import { Link } from 'react-router-dom';
 import { 
   PlusCircle, 
   Calendar, 
@@ -23,7 +25,8 @@ import {
   X, 
   Loader2, 
   Heart, 
-  Link as LinkIcon 
+  Link as LinkIcon,
+  Flag
 } from 'lucide-react';
 
 const extractImageUrl = (img) => {
@@ -45,14 +48,24 @@ const extractTickets = (showData) => {
   return 100;
 };
 
+const loadRazorpay = () => new Promise((resolve, reject) => {
+  if (window.Razorpay) return resolve();
+  const script = document.createElement('script');
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  script.onload = () => resolve();
+  script.onerror = () => reject(new Error('Could not load Razorpay Checkout.'));
+  document.body.appendChild(script);
+});
+
 // Recursive Component for Nested Replies
-function ReplyItem({ reply, reviewId, onLike, onReplySubmit, currentUserId }) {
+function ReplyItem({ reply, reviewId, onLike, onReplySubmit, onEditReply, onDeleteReply, currentUserId, canModerate }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [replyPhoto, setReplyPhoto] = useState('');
 
   const replyId = reply._id || reply.id;
   const isLiked = reply.likes?.includes(currentUserId);
+  const isOwner = String(reply.userId?._id || reply.userId) === String(currentUserId);
 
   const handleSendReply = async () => {
     if (!replyText.trim() && !replyPhoto) return;
@@ -66,7 +79,7 @@ function ReplyItem({ reply, reviewId, onLike, onReplySubmit, currentUserId }) {
     <div className="ml-6 pl-4 border-l-2 border-amber-200/60 space-y-2 mt-3">
       <div className="bg-[#FFFDF9] p-3 rounded-xl border border-amber-100/70 shadow-sm space-y-1.5">
         <div className="flex justify-between items-center text-xs">
-          <span className="font-bold text-emerald-800">{reply.userName || reply.author || 'User'}</span>
+          <span className="flex items-center gap-2">{reply.userId?.profilePhotoUrl && <img src={reply.userId.profilePhotoUrl} alt="" className="h-5 w-5 rounded-full object-cover" />}<Link to={`/profile/${reply.userId?._id || reply.userId}`} className="font-bold text-emerald-800 hover:underline">{reply.userId?.name || reply.userName || reply.author || 'User'}</Link></span>
           <span className="text-[10px] text-gray-400">
             {reply.createdAt ? new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
           </span>
@@ -93,6 +106,10 @@ function ReplyItem({ reply, reviewId, onLike, onReplySubmit, currentUserId }) {
           >
             Reply
           </button>
+          {(isOwner || canModerate) && <>
+            <button onClick={() => onEditReply(reviewId, replyId)} className="hover:text-amber-900">Edit</button>
+            <button onClick={() => onDeleteReply(reviewId, replyId)} className="hover:text-red-700">Delete</button>
+          </>}
         </div>
       </div>
 
@@ -131,6 +148,9 @@ function ReplyItem({ reply, reviewId, onLike, onReplySubmit, currentUserId }) {
           onLike={onLike} 
           onReplySubmit={onReplySubmit} 
           currentUserId={currentUserId}
+          onEditReply={onEditReply}
+          onDeleteReply={onDeleteReply}
+          canModerate={canModerate}
         />
       ))}
     </div>
@@ -164,6 +184,8 @@ export default function ExplorePage() {
   const [isPatronModalOpen, setIsPatronModalOpen] = useState(false);
   const [donationAmount, setDonationAmount] = useState('500');
   const [donationSuccess, setDonationSuccess] = useState(null);
+  const [donationLoading, setDonationLoading] = useState(false);
+  const [donationError, setDonationError] = useState('');
   const [selectedPatronShow, setSelectedPatronShow] = useState(null);
 
   const [paymentSuccessData, setPaymentSuccessData] = useState(null);
@@ -249,13 +271,58 @@ export default function ExplorePage() {
     const showId = show._id || show.id;
     setBookingLoadingId(showId);
     try {
-      await api.post(`/shows/${showId}/book`, { ticketsCount: 1 });
-      setPaymentSuccessData(show);
+      const orderResponse = await api.post('/payments/orders', {
+        purpose: 'ticket',
+        showId,
+        ticketsCount: 1
+      });
+      if (orderResponse.data.freeBooking) {
+        setPaymentSuccessData({ show, booking: orderResponse.data.freeBooking });
+        fetchShowsList();
+        return;
+      }
+      await loadRazorpay();
+      const verifiedPayment = await new Promise((resolve, reject) => {
+        let finished = false;
+        const checkout = new window.Razorpay({
+          key: orderResponse.data.keyId,
+          amount: orderResponse.data.amount,
+          currency: orderResponse.data.currency,
+          name: 'Tvarita Arts Collective',
+          description: `Ticket for ${show.title}`,
+          order_id: orderResponse.data.orderId,
+          handler: async (payment) => {
+            if (finished) return;
+            finished = true;
+            try {
+              const verification = await api.post('/payments/verify', payment);
+              resolve(verification.data);
+            } catch (error) {
+              reject(error);
+            }
+          },
+          modal: {
+            ondismiss: async () => {
+              if (finished) return;
+              finished = true;
+              await api.post(`/payments/orders/${orderResponse.data.orderId}/cancel`).catch(() => {});
+              reject(new Error('Payment cancelled.'));
+            }
+          },
+          theme: { color: '#E65100' }
+        });
+        checkout.on('payment.failed', (event) => {
+          finished = true;
+          api.post(`/payments/orders/${orderResponse.data.orderId}/cancel`).catch(() => {});
+          reject(new Error(event.error?.description || 'Payment failed.'));
+        });
+        checkout.open();
+      });
+      setPaymentSuccessData({ show, booking: verifiedPayment.booking });
       fetchShowsList();
-      setTimeout(() => setPaymentSuccessData(null), 3000);
     } catch (err) {
       console.error('Booking error:', err);
-      alert(err.response?.data?.message || 'Failed to book ticket.');
+      alert(err.response?.data?.message || err.message || 'Failed to complete ticket payment.');
     } finally {
       setBookingLoadingId(null);
     }
@@ -266,6 +333,8 @@ export default function ExplorePage() {
       setIsGateOpen(true);
       return;
     }
+    setDonationError('');
+    setDonationSuccess(null);
     setSelectedPatronShow(show);
     setIsPatronModalOpen(true);
   };
@@ -275,6 +344,7 @@ export default function ExplorePage() {
     if (!file) return;
     if (file.size > 50 * 1024 * 1024) {
       alert('Media must be smaller than 50 MB.');
+      e.target.value = '';
       return;
     }
     setCommentMediaFile(file);
@@ -319,6 +389,21 @@ export default function ExplorePage() {
     }
   };
 
+  const handleReportReview = async (reviewId) => {
+    if (isGuest) {
+      setIsGateOpen(true);
+      return;
+    }
+    const reason = window.prompt('Why are you reporting this comment?');
+    if (!reason?.trim()) return;
+    try {
+      await api.post(`/reports/showReview/${reviewId}`, { reason });
+      alert('Report sent to moderators.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not send report.');
+    }
+  };
+
   // Saved backend sync for Liking reviews and nested replies
   const handleLikeReview = async (reviewId, replyId = null) => {
     if (isGuest) {
@@ -339,6 +424,46 @@ export default function ExplorePage() {
     } catch (err) {
       console.error('Failed to sync like with backend:', err);
       alert(err.response?.data?.message || 'Failed to save like to server.');
+    }
+  };
+
+  const handleEditShowComment = async (reviewId, replyId = null) => {
+    const review = comments.find((item) => (item._id || item.id) === reviewId);
+    const findReply = (replies) => {
+      for (const reply of replies || []) {
+        if (String(reply._id || reply.id) === String(replyId)) return reply;
+        const nested = findReply(reply.replies);
+        if (nested) return nested;
+      }
+      return null;
+    };
+    const current = replyId ? findReply(review?.replies) : review;
+    const comment = window.prompt(replyId ? 'Edit reply:' : 'Edit comment:', current?.comment || '');
+    if (comment === null || !comment.trim()) return;
+    try {
+      const endpoint = replyId
+        ? `/shows/reviews/${reviewId}/replies/${replyId}`
+        : `/shows/reviews/${reviewId}`;
+      const response = await api.patch(endpoint, { comment });
+      setComments((items) => items.map((item) => (item._id || item.id) === reviewId ? response.data : item));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not edit comment.');
+    }
+  };
+
+  const handleDeleteShowComment = async (reviewId, replyId = null) => {
+    const isReply = Boolean(replyId);
+    if (!window.confirm(isReply ? 'Delete this reply and its nested replies?' : 'Delete this comment and all its replies?')) return;
+    try {
+      if (!isReply) {
+        await api.delete(`/shows/reviews/${reviewId}`);
+        setComments((items) => items.filter((item) => (item._id || item.id) !== reviewId));
+        return;
+      }
+      const response = await api.delete(`/shows/reviews/${reviewId}/replies/${replyId}`);
+      setComments((items) => items.map((item) => (item._id || item.id) === reviewId ? response.data : item));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not delete comment.');
     }
   };
 
@@ -367,10 +492,62 @@ export default function ExplorePage() {
     }
   };
 
-  const handleDonationSubmit = (e) => {
+  const handleDonationSubmit = async (e) => {
     e.preventDefault();
-    if (!donationAmount || Number(donationAmount) <= 0) return;
-    setDonationSuccess(donationAmount);
+    if (!donationAmount || Number(donationAmount) <= 0 || donationLoading) return;
+    setDonationError('');
+    setDonationLoading(true);
+    let order;
+    try {
+      const orderResponse = await api.post('/payments/orders', {
+        purpose: 'donation',
+        amount: Number(donationAmount),
+        showId: selectedPatronShow?._id || selectedPatronShow?.id || undefined
+      });
+      order = orderResponse.data;
+      await loadRazorpay();
+      const result = await new Promise((resolve, reject) => {
+        let finished = false;
+        const checkout = new window.Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: 'Tvarita Arts Collective',
+          description: selectedPatronShow ? `Patron support for ${selectedPatronShow.title}` : 'Patron support',
+          order_id: order.orderId,
+          handler: async (payment) => {
+            if (finished) return;
+            finished = true;
+            try {
+              const verification = await api.post('/payments/verify', payment);
+              resolve(verification.data);
+            } catch (error) {
+              reject(error);
+            }
+          },
+          modal: {
+            ondismiss: async () => {
+              if (finished) return;
+              finished = true;
+              await api.post(`/payments/orders/${order.orderId}/cancel`).catch(() => {});
+              reject(new Error('Payment cancelled.'));
+            }
+          },
+          theme: { color: '#E65100' }
+        });
+        checkout.on('payment.failed', (event) => {
+          finished = true;
+          api.post(`/payments/orders/${order.orderId}/cancel`).catch(() => {});
+          reject(new Error(event.error?.description || 'Payment failed.'));
+        });
+        checkout.open();
+      });
+      setDonationSuccess(result.amount);
+    } catch (error) {
+      setDonationError(error.response?.data?.message || error.message || 'Donation payment failed.');
+    } finally {
+      setDonationLoading(false);
+    }
   };
 
   const safeArtForms = Array.isArray(artForms) ? artForms : [];
@@ -630,10 +807,8 @@ export default function ExplorePage() {
                   return (
                     <div key={showId} className="p-4 bg-[#FFFDF9] rounded-xl border border-amber-200/70 shadow-sm flex flex-col justify-between transition hover:shadow-md">
                       <div>
-                        {show.mediaUrl && show.mediaType === 'video' ? (
-                          <video src={show.mediaUrl} controls className="mb-3 h-36 w-full rounded-lg border border-amber-100 object-cover" />
-                        ) : show.mediaUrl && show.mediaType === 'audio' ? (
-                          <div className="mb-3 flex h-36 items-center rounded-lg border border-amber-100 bg-amber-50 p-3"><audio src={show.mediaUrl} controls className="w-full" /></div>
+                        {show.mediaUrl && ['video', 'audio', 'document'].includes(show.mediaType) ? (
+                          <MediaAttachment url={show.mediaUrl} type={show.mediaType} name={show.mediaFileName} className="mb-3 h-36 border border-amber-100" />
                         ) : showImage ? (
                           <img src={showImage} alt={show.title || 'Show Image'} className="w-full h-36 object-cover rounded-lg mb-3 border border-amber-100" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
                         ) : (
@@ -715,10 +890,14 @@ export default function ExplorePage() {
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-12 h-12 text-emerald-600" />
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-1">Payment Successful!</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Your ticket for <span className="font-bold text-gray-900">{paymentSuccessData.title}</span> has been confirmed.
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-1">{paymentSuccessData.booking?.totalPaid === 0 ? 'Ticket Confirmed!' : 'Payment Successful!'}</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Your ticket for <span className="font-bold text-gray-900">{paymentSuccessData.show.title}</span> has been confirmed.
             </p>
+            {paymentSuccessData.booking?.ticketCode && <>
+              <img src={`https://quickchart.io/qr?text=${encodeURIComponent(paymentSuccessData.booking.ticketCode)}&size=180`} alt="Ticket QR code" className="mb-3 h-40 w-40 rounded-xl border border-amber-100 p-1" />
+              <p className="mb-5 text-xs font-bold text-amber-900">Ticket code: {paymentSuccessData.booking.ticketCode}</p>
+            </>}
             <button 
               onClick={() => setPaymentSuccessData(null)}
               className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition"
@@ -802,11 +981,14 @@ export default function ExplorePage() {
                   />
                 </div>
 
+                {donationError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{donationError}</p>}
+
                 <button
                   type="submit"
-                  className="w-full py-3 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2"
+                  disabled={donationLoading}
+                  className="w-full py-3 bg-rose-700 hover:bg-rose-800 disabled:opacity-60 text-white font-bold rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2"
                 >
-                  <Heart className="w-4 h-4 fill-white" /> Complete Donation
+                  <Heart className="w-4 h-4 fill-white" /> {donationLoading ? 'Opening secure checkout…' : 'Continue to secure checkout'}
                 </button>
               </form>
             )}
@@ -892,6 +1074,7 @@ export default function ExplorePage() {
                   const reviewId = item._id || item.id;
                   const currentUserId = user?._id || user?.id;
                   const isLiked = item.likes?.includes(currentUserId);
+                  const isOwner = String(item.userId?._id || item.userId) === String(currentUserId);
 
                   return (
                     <div 
@@ -900,29 +1083,20 @@ export default function ExplorePage() {
                     >
                       <div className="flex justify-between items-center text-xs">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
-                            {(item.userName || item.author || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-bold text-gray-900">{item.userName || item.author || 'User'}</span>
+                          {item.userId?.profilePhotoUrl ? <img src={item.userId.profilePhotoUrl} alt="" className="h-7 w-7 rounded-full object-cover" /> : <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">{(item.userName || item.author || 'U').charAt(0).toUpperCase()}</div>}
+                          <Link to={`/profile/${item.userId?._id || item.userId}`} className="font-bold text-gray-900 hover:underline">{item.userName || item.author || 'User'}</Link>
                         </div>
                         <span className="text-[11px] text-gray-400">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : (item.time || '')}
+                          {item.editedAt ? 'Edited · ' : ''}{item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : (item.time || '')}
                         </span>
                       </div>
+                      {item.userId?.bio && <p className="pl-2 sm:pl-9 text-[11px] text-gray-500">{item.userId.bio}</p>}
 
                       {item.comment && <p className="text-sm text-gray-800 leading-relaxed pl-2 sm:pl-9">{item.comment}</p>}
 
-                      {item.mediaUrl && item.mediaType === 'video' ? (
-                        <div className="pl-2 sm:pl-9 pt-1"><video src={item.mediaUrl} controls className="max-h-72 w-full rounded-xl border border-gray-200" /></div>
-                      ) : item.mediaUrl && item.mediaType === 'audio' ? (
-                        <div className="pl-2 sm:pl-9 pt-1"><audio src={item.mediaUrl} controls className="w-full" /></div>
-                      ) : (item.mediaUrl || item.imageUrl || item.photo) && (
+                      {(item.mediaUrl || item.imageUrl || item.photo) && (
                         <div className="pl-2 sm:pl-9 pt-1">
-                          <img 
-                            src={item.mediaUrl || item.imageUrl || item.photo} 
-                            alt="Discussion Attachment" 
-                            className="w-full max-h-72 object-cover rounded-xl border border-gray-200" 
-                          />
+                          <MediaAttachment url={item.mediaUrl || item.imageUrl || item.photo} type={item.mediaType || 'image'} name={item.mediaFileName} />
                         </div>
                       )}
 
@@ -935,6 +1109,14 @@ export default function ExplorePage() {
                           <Heart className={`w-4 h-4 ${isLiked ? 'fill-rose-600 text-rose-600' : ''}`} />
                           <span>{item.likes?.length || 0} Likes</span>
                         </button>
+
+                        <button onClick={() => handleReportReview(reviewId)} className="flex items-center gap-1 hover:text-red-700" title="Report comment">
+                          <Flag className="h-3.5 w-3.5" /> Report
+                        </button>
+                        {(isOwner || user?.role === 'admin') && <>
+                          <button onClick={() => handleEditShowComment(reviewId)} className="hover:text-amber-900">Edit</button>
+                          <button onClick={() => handleDeleteShowComment(reviewId)} className="hover:text-red-700">Delete</button>
+                        </>}
 
                         <button 
                           onClick={() => {
@@ -992,6 +1174,9 @@ export default function ExplorePage() {
                           onLike={handleLikeReview} 
                           onReplySubmit={handlePostReply} 
                           currentUserId={currentUserId}
+                          onEditReply={handleEditShowComment}
+                          onDeleteReply={handleDeleteShowComment}
+                          canModerate={user?.role === 'admin'}
                         />
                       ))}
                     </div>
@@ -1004,7 +1189,7 @@ export default function ExplorePage() {
             <form onSubmit={handlePostComment} className="p-2.5 sm:p-4 bg-white border-t border-amber-100 flex-shrink-0 space-y-2 sm:space-y-3">
               {(commentPhoto || commentMediaPreview) && (
                 <div className="relative inline-block pl-2">
-                  {commentMediaFile?.type.startsWith('video/') ? <video src={commentMediaPreview} controls className="h-16 w-24 rounded-xl border border-amber-200 object-cover" /> : commentMediaFile?.type.startsWith('audio/') ? <audio src={commentMediaPreview} controls className="w-48" /> : <img src={commentMediaPreview || commentPhoto} alt="Preview" className="h-16 w-16 rounded-xl border border-amber-200 object-cover" />}
+                  <MediaAttachment url={commentMediaPreview || commentPhoto} type={commentMediaFile?.type.startsWith('video/') ? 'video' : commentMediaFile?.type.startsWith('audio/') ? 'audio' : commentMediaFile && !commentMediaFile.type.startsWith('image/') ? 'document' : 'image'} name={commentMediaFile?.name} className="max-h-24 w-48" />
                   <button 
                     type="button"
                     onClick={() => { setCommentPhoto(null); setCommentMediaFile(null); setCommentMediaPreview(''); }} 
@@ -1028,7 +1213,7 @@ export default function ExplorePage() {
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <label className="cursor-pointer p-2.5 sm:p-3 bg-amber-50 text-amber-900 rounded-xl hover:bg-amber-100 transition border border-amber-200 flex-shrink-0" title="Upload Image File">
                   <ImageIcon className="w-4 h-4" />
-                  <input type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleFileUpload} />
+                  <input type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf" className="hidden" onChange={handleFileUpload} />
                 </label>
 
                 <button

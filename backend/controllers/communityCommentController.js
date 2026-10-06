@@ -14,8 +14,12 @@ export const getCommunityComments = async (req, res) => {
 
     const comments = await CommunityComment.find({
       targetType,
-      targetId: req.params.targetId
-    }).sort({ createdAt: -1 });
+      targetId: req.params.targetId,
+      moderationStatus: { $ne: 'hidden' }
+    }).populate('userId', 'name bio profilePhotoUrl')
+      .populate('replies.userId', 'name bio profilePhotoUrl')
+      .populate('replies.replies.userId', 'name bio profilePhotoUrl')
+      .sort({ createdAt: -1 });
 
     res.json(comments);
   } catch (error) {
@@ -133,5 +137,86 @@ export const createCommunityReply = async (req, res) => {
     res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateCommunityComment = async (req, res) => {
+  try {
+    const comment = await CommunityComment.findOne({ _id: req.params.commentId, targetType: getTargetType(req.params.targetType), targetId: req.params.targetId });
+    if (!comment) return res.status(404).json({ message: 'Comment not found.' });
+    if (String(comment.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only edit your own comment.' });
+    const text = String(req.body.comment || '').trim();
+    if (!text) return res.status(400).json({ message: 'Comment cannot be empty.' });
+    comment.comment = text;
+    comment.editedAt = new Date();
+    await comment.save();
+    res.json(comment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const findReply = (replies, replyId) => {
+  for (const reply of replies || []) {
+    if (String(reply._id) === String(replyId)) return reply;
+    const nested = findReply(reply.replies, replyId);
+    if (nested) return nested;
+  }
+  return null;
+};
+
+const removeReply = (replies, replyId) => {
+  for (let index = 0; index < (replies || []).length; index += 1) {
+    if (String(replies[index]._id) === String(replyId)) {
+      replies.splice(index, 1);
+      return true;
+    }
+    if (removeReply(replies[index].replies, replyId)) return true;
+  }
+  return false;
+};
+
+export const updateCommunityReply = async (req, res) => {
+  try {
+    const comment = await CommunityComment.findOne({ _id: req.params.commentId, targetType: getTargetType(req.params.targetType) });
+    if (!comment) return res.status(404).json({ message: 'Comment thread not found.' });
+    const reply = findReply(comment.replies, req.params.replyId);
+    if (!reply) return res.status(404).json({ message: 'Reply not found.' });
+    if (String(reply.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only edit your own reply.' });
+    const text = String(req.body.comment || '').trim();
+    if (!text) return res.status(400).json({ message: 'Reply cannot be empty.' });
+    reply.comment = text;
+    reply.editedAt = new Date();
+    await comment.save();
+    res.json(comment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteCommunityComment = async (req, res) => {
+  try {
+    const comment = await CommunityComment.findOne({ _id: req.params.commentId, targetType: getTargetType(req.params.targetType), targetId: req.params.targetId });
+    if (!comment) return res.status(404).json({ message: 'Comment not found.' });
+    if (String(comment.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only delete your own comment.' });
+    await comment.deleteOne();
+    res.json({ deleted: true, commentId: req.params.commentId });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteCommunityReply = async (req, res) => {
+  try {
+    const comment = await CommunityComment.findOne({ _id: req.params.commentId, targetType: getTargetType(req.params.targetType) });
+    if (!comment) return res.status(404).json({ message: 'Comment thread not found.' });
+    const reply = findReply(comment.replies, req.params.replyId);
+    if (!reply) return res.status(404).json({ message: 'Reply not found.' });
+    if (String(reply.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only delete your own reply.' });
+    removeReply(comment.replies, req.params.replyId);
+    await comment.save();
+    res.json(comment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

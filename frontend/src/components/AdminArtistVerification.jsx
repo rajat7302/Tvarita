@@ -20,9 +20,20 @@ export default function AdminArtistVerification() {
   const handleVerify = async (artistId) => {
     try {
       await api.patch(`/admin/verify-artist/${artistId}`);
-      setPendingArtists(pendingArtists.filter((a) => a._id !== artistId));
+      setPendingArtists((current) => current.filter((artist) => artist._id !== artistId));
     } catch (err) {
-      alert('Verification failed.');
+      alert(err.response?.data?.message || 'Verification failed.');
+    }
+  };
+
+  const handleReject = async (artistId) => {
+    const reason = window.prompt('Reason for rejecting this artist application (optional):');
+    if (reason === null) return;
+    try {
+      await api.patch(`/admin/reject-artist/${artistId}`, { reason });
+      setPendingArtists((current) => current.filter((artist) => artist._id !== artistId));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Rejection failed.');
     }
   };
 
@@ -37,8 +48,9 @@ export default function AdminArtistVerification() {
         <div className="space-y-4">
           {pendingArtists.map((artist) => (
             <div key={artist._id} className="p-4 bg-white rounded-2xl border border-amber-200 shadow-sm">
-              <h3 className="font-bold text-amber-950 text-lg">{artist.artistProfile?.teamName || artist.name}</h3>
-              <p className="text-sm text-amber-800 mb-2">{artist.artistProfile?.teamDescription}</p>
+              <h3 className="font-bold text-amber-950 text-lg">{artist.artistProfile?.teamName}</h3>
+              <p className="text-xs text-gray-500">Application from {artist.name} · {artist.email}</p>
+              {artist.artistProfile?.teamDescription && <p className="text-sm text-amber-800 my-2">{artist.artistProfile.teamDescription}</p>}
 
               {artist.artistProfile?.members?.length > 0 && (
                 <>
@@ -51,12 +63,20 @@ export default function AdminArtistVerification() {
                 </>
               )}
 
-              <button
-                onClick={() => handleVerify(artist._id)}
-                className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition"
-              >
-                Approve & Verify Artist
-              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleVerify(artist._id)}
+                  className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-xl hover:bg-emerald-800 transition"
+                >
+                  Approve & Verify Artist
+                </button>
+                <button
+                  onClick={() => handleReject(artist._id)}
+                  className="px-4 py-2 border border-red-200 bg-white text-red-700 text-xs font-bold rounded-xl hover:bg-red-50 transition"
+                >
+                  Reject Application
+                </button>
+              </div>
             </div>
           ))}
         </div>

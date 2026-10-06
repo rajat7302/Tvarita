@@ -36,9 +36,10 @@ const experienceSchema = new mongoose.Schema(
     },
     mediaType: {
       type: String,
-      enum: ['image', 'video', 'audio', ''],
+      enum: ['image', 'video', 'audio', 'document', ''],
       default: ''
-    }
+    },
+    mediaFileName: { type: String, default: '' }
   },
   {
     timestamps: true

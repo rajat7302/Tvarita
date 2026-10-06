@@ -1,9 +1,10 @@
 import Experience from '../models/Experience.js';
+import { getMediaType } from '../utils/media.js';
 
 export const getExperiencesByArtForm = async (req, res) => {
   try {
     const experiences = await Experience.find({ artFormId: req.params.artFormId })
-      .populate('userId', 'name')
+      .populate('userId', 'name bio profilePhotoUrl')
       .populate('artistId', 'name')
       .sort({ createdAt: -1 });
     res.json(experiences);
@@ -15,7 +16,7 @@ export const getExperiencesByArtForm = async (req, res) => {
 export const getExperiencesByArtist = async (req, res) => {
   try {
     const experiences = await Experience.find({ artistId: req.params.artistId })
-      .populate('userId', 'name')
+      .populate('userId', 'name bio profilePhotoUrl')
       .populate('artFormId', 'name')
       .sort({ createdAt: -1 });
     res.json(experiences);
@@ -36,8 +37,9 @@ export const createExperience = async (req, res) => {
       imageUrl: imageUrl || '',
       mediaUrl: req.file?.path || req.file?.secure_url || '',
       mediaType: req.file
-        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
-        : mediaType || ''
+        ? getMediaType(req.file)
+        : mediaType || '',
+      mediaFileName: req.file?.originalname || ''
     });
     res.status(201).json(experience);
   } catch (error) {

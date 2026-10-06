@@ -1,11 +1,12 @@
 import CommunityPost from '../models/Post.js';
+import { getMediaType } from '../utils/media.js';
 
 export const getPostsByArtForm = async (req, res) => {
   try {
     const posts = await CommunityPost.find({ 
       artFormId: req.params.artFormId, 
       status: { $in: ['published', null] }
-    }).populate('userId', 'name').sort({ createdAt: -1 });
+    }).populate('userId', 'name bio profilePhotoUrl').sort({ createdAt: -1 });
     
     res.json(posts);
   } catch (error) {
@@ -26,8 +27,9 @@ export const createPost = async (req, res) => {
       imageUrl: imageUrl || '',
       mediaUrl: req.file?.path || req.file?.secure_url || '',
       mediaType: req.file
-        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
+        ? getMediaType(req.file)
         : mediaType || '',
+      mediaFileName: req.file?.originalname || '',
       status: artFormId ? 'published' : 'pending_verification'
     });
 

@@ -31,9 +31,10 @@ const postSchema = new mongoose.Schema(
     },
     mediaType: {
       type: String,
-      enum: ['image', 'video', 'audio', ''],
+      enum: ['image', 'video', 'audio', 'document', ''],
       default: ''
     },
+    mediaFileName: { type: String, default: '' },
     status: {
       type: String,
       enum: ['published', 'pending_verification'],

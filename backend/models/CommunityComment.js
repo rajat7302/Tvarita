@@ -4,6 +4,8 @@ const replySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   userName: { type: String, required: true },
   comment: { type: String, required: true, trim: true },
+  editedAt: { type: Date, default: null },
+  moderationStatus: { type: String, enum: ['visible', 'hidden'], default: 'visible' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   replies: []
 }, { timestamps: true });
@@ -16,6 +18,7 @@ const communityCommentSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   userName: { type: String, required: true },
   comment: { type: String, required: true, trim: true },
+  editedAt: { type: Date, default: null },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   replies: [replySchema]
 }, { timestamps: true });

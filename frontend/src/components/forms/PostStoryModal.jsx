@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, AlertCircle } from 'lucide-react';
 import { createCommunityPost } from '../../services/artFormService';
+import MediaAttachment from '../common/MediaAttachment';
 
 export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded }) {
   const [title, setTitle] = useState('');
@@ -98,13 +99,13 @@ export default function PostStoryModal({ isOpen, onClose, artFormId, onPostAdded
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Media (Optional)</label>
             <label className="mb-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/30 px-3 py-3 text-xs font-semibold text-amber-900">
-              Upload image, video, or audio (max 50 MB)
-              <input type="file" accept="image/*,video/*,audio/*" onChange={handleMediaChange} className="hidden" />
+              Upload image, video, audio, or document (max 50 MB)
+              <input type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf" onChange={handleMediaChange} className="hidden" />
             </label>
             {mediaPreview && (
               <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 p-2">
-                {mediaFile?.type.startsWith('video/') ? <video src={mediaPreview} controls className="max-h-40 w-full rounded-lg" /> : mediaFile?.type.startsWith('audio/') ? <audio src={mediaPreview} controls className="w-full" /> : <img src={mediaPreview} alt="Media preview" className="max-h-40 w-full rounded-lg object-cover" />}
-            </div>
+                <MediaAttachment url={mediaPreview} type={mediaFile?.type.startsWith('video/') ? 'video' : mediaFile?.type.startsWith('audio/') ? 'audio' : mediaFile && !mediaFile.type.startsWith('image/') ? 'document' : 'image'} name={mediaFile?.name} className="max-h-40" />
+              </div>
             )}
             <label className="block text-xs font-semibold text-gray-700 mb-1">Or Photo URL</label>
             <input

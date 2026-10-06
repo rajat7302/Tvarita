@@ -42,6 +42,15 @@ const artFormSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isRejected: {
+      type: Boolean,
+      default: false,
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
    
     images: {
       type: [String],

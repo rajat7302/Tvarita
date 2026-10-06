@@ -6,7 +6,11 @@ const bookingSchema = new mongoose.Schema({
   ticketsBooked: { type: Number, required: true, min: 1 },
   totalPaid: { type: Number, required: true },
   patronContribution: { type: Number, default: 0 },
-  paymentStatus: { type: String, enum: ['completed', 'failed'], default: 'completed' }
+  paymentStatus: { type: String, enum: ['completed', 'failed'], default: 'completed' },
+  paymentId: { type: String, unique: true, sparse: true },
+  orderId: { type: String, default: '' },
+  ticketCode: { type: String, required: true, unique: true },
+  ticketStatus: { type: String, enum: ['valid', 'used', 'cancelled'], default: 'valid' }
 }, { timestamps: true });
 
 export default mongoose.model('Booking', bookingSchema);

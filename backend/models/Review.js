@@ -4,9 +4,11 @@ const replySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   userName: { type: String, required: true },
   comment: { type: String, required: true },
+  editedAt: { type: Date, default: null },
   imageUrl: { type: String, default: '' },
   mediaUrl: { type: String, default: '' },
-  mediaType: { type: String, enum: ['image', 'video', 'audio', ''], default: '' },
+  mediaType: { type: String, enum: ['image', 'video', 'audio', 'document', ''], default: '' },
+  mediaFileName: { type: String, default: '' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
 }, { timestamps: true });
 
@@ -20,8 +22,12 @@ const reviewSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   userName: { type: String, required: true },
   rating: { type: Number, min: 1, max: 5 },
-  comment: { type: String, required: true },
+  comment: { type: String, default: '' },
+  moderationStatus: { type: String, enum: ['visible', 'hidden'], default: 'visible' },
   imageUrl: { type: String, default: '' },
+  mediaUrl: { type: String, default: '' },
+  mediaType: { type: String, enum: ['image', 'video', 'audio', 'document', ''], default: '' },
+  mediaFileName: { type: String, default: '' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Array of user IDs who liked this top-level comment
   replies: [replySchema] // Nested child replies
 }, { timestamps: true });

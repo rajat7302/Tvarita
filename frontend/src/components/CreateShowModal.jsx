@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { X, Upload, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
+import MediaAttachment from './common/MediaAttachment';
 
 export default function CreateShowModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,12 @@ export default function CreateShowModal({ isOpen, onClose, onSuccess }) {
   const handleMediaChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setErrorMessage('Media must be smaller than 50 MB.');
+      e.target.value = '';
+      return;
+    }
+    setErrorMessage('');
 
     const saveFile = (selectedFile) => {
       setMediaFile(selectedFile);
@@ -241,8 +248,13 @@ export default function CreateShowModal({ isOpen, onClose, onSuccess }) {
             </div>
 
             {(formData.imageUrl || mediaPreview) && (
-              <div className="relative w-full h-32 rounded-xl overflow-hidden border border-amber-200 bg-amber-50">
-                {mediaFile?.type.startsWith('video/') ? <video src={mediaPreview} controls className="w-full h-full object-cover" /> : mediaFile?.type.startsWith('audio/') ? <audio src={mediaPreview} controls className="w-full mt-12" /> : <img src={mediaPreview || formData.imageUrl} alt="Media Preview" className="w-full h-full object-cover" />}
+              <div className="relative rounded-xl border border-amber-200 bg-amber-50 p-2">
+                <MediaAttachment
+                  url={mediaPreview || formData.imageUrl}
+                  type={mediaFile?.type.startsWith('video/') ? 'video' : mediaFile?.type.startsWith('audio/') ? 'audio' : mediaFile && !mediaFile.type.startsWith('image/') ? 'document' : 'image'}
+                  name={mediaFile?.name}
+                  className="max-h-40"
+                />
                 <button
                   type="button"
                   onClick={() => { setMediaFile(null); setMediaPreview(''); setFormData((prev) => ({ ...prev, imageUrl: '' })); }}
@@ -266,9 +278,9 @@ export default function CreateShowModal({ isOpen, onClose, onSuccess }) {
               ) : (
                 <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition">
                   <Upload className="w-5 h-5 text-gray-500" />
-                  <span className="text-xs text-gray-600 font-semibold">Click to upload image, video, or audio</span>
+                  <span className="text-xs text-gray-600 font-semibold">Click to upload image, video, audio, or document</span>
                   <span className="text-[10px] text-gray-400">Maximum 50 MB</span>
-                  <input type="file" accept="image/*,video/*,audio/*" onChange={handleMediaChange} className="hidden" />
+                  <input type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf" onChange={handleMediaChange} className="hidden" />
                 </label>
               )
             )}
