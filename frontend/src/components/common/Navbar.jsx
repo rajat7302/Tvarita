@@ -1,8 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { Compass, Edit3, LogOut, LogIn } from 'lucide-react';
+import { Compass, Edit3, LogOut, LogIn, Ticket, Users } from 'lucide-react';
 import EditProfileModal from '../forms/EditProfileModal';
+import ImageLightbox from './ImageLightbox';
 
 export default function Navbar() {
   const { user, logout, updateUser } = useContext(AuthContext);
@@ -35,9 +36,17 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-                <span className="hidden md:inline text-sm font-medium text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 max-w-[8rem] truncate">
+                <Link to={`/profile/${user._id || user.id}`} className="hidden md:flex items-center gap-2 text-sm font-medium text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 max-w-[10rem] truncate">
+                  {user.profilePhotoUrl && <ImageLightbox src={user.profilePhotoUrl} alt={`${user.name} profile photo`} className="h-6 w-6 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}
                   {user.name}
-                </span>
+                </Link>
+
+                <Link to="/tickets" className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 sm:px-3" title="My Tickets">
+                  <Ticket className="h-3.5 w-3.5" /> Tickets
+                </Link>
+                <Link to="/friends" className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 sm:px-3" title="Friends and Chat">
+                  <Users className="h-3.5 w-3.5" /><span className="hidden sm:inline">Friends</span>
+                </Link>
 
                 <button
                   onClick={() => setIsEditModalOpen(true)}

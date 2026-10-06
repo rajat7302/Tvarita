@@ -9,35 +9,40 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
     state: '',
     region: '',
     description: '',
+    historicalContext: '',
     isUnderrepresented: true,
   });
-  const [imagePreview, setImagePreview] = useState(null); // Holds Base64 string
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   if (!isOpen) return null;
 
-  // Convert uploaded image directly to Base64 string
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result); // Base64 data URI string
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Cover image must be smaller than 10 MB.');
+      e.target.value = '';
+      return;
     }
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleRemoveImage = () => {
-    setImagePreview(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview('');
+    setImageFile(null);
   };
 
   const resetForm = () => {
     handleRemoveImage();
     setImageUrl('');
-    setFormData({ name: '', category: 'Dance', state: '', region: '', description: '', isUnderrepresented: true });
+    setFormData({ name: '', category: 'Dance', state: '', region: '', description: '', historicalContext: '', isUnderrepresented: true });
     setSubmitted(false);
   };
 
@@ -46,18 +51,11 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
-      // Send regular JSON object (Matches req.body.imageUrl in requestArtForm controller)
-      const finalImageUrl = imagePreview || imageUrl.trim() || '';
-
-      await requestArtForm({
-        name: formData.name,
-        category: formData.category,
-        state: formData.state,
-        region: formData.region,
-        description: formData.description,
-        isUnderrepresented: formData.isUnderrepresented,
-        imageUrl: finalImageUrl,
-      });
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => payload.append(key, String(value)));
+      if (imageFile) payload.append('image', imageFile);
+      else if (imageUrl.trim()) payload.append('imageUrl', imageUrl.trim());
+      await requestArtForm(payload);
 
       setSubmitted(true);
       if (onSuccess) onSuccess();
@@ -142,6 +140,14 @@ export default function RequestArtFormModal({ isOpen, onClose, onSuccess }) {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3.5 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 resize-none"
+            ></textarea>
+
+            <textarea
+              rows="2"
+              placeholder="Historical context or sources (optional)"
+              value={formData.historicalContext}
+              onChange={(e) => setFormData({ ...formData, historicalContext: e.target.value })}
+              className="w-full px-3.5 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 resize-y"
             ></textarea>
 
             <label className="flex items-center gap-2 text-xs font-semibold text-amber-900 cursor-pointer">

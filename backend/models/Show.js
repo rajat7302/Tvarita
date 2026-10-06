@@ -14,7 +14,8 @@ const showSchema = new mongoose.Schema({
   isSoldOut: { type: Boolean, default: false },
   imageUrl: { type: String, default: '' },
   mediaUrl: { type: String, default: '' },
-  mediaType: { type: String, enum: ['image', 'video', 'audio', ''], default: '' },
+  mediaType: { type: String, enum: ['image', 'video', 'audio', 'document', ''], default: '' },
+  mediaFileName: { type: String, default: '' },
   expiresAt: { type: Date, index: { expires: 0 } }
 }, { timestamps: true });
 

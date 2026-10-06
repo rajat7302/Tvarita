@@ -39,7 +39,11 @@ export const getArtFormById = async (req, res) => {
 
 export const requestArtForm = async (req, res) => {
   try {
-    const { name, category, state, region, description, imageUrl, isUnderrepresented } = req.body;
+    const { name, category, state, region, description, historicalContext, imageUrl, isUnderrepresented } = req.body;
+
+    if (req.file && !req.file.mimetype?.startsWith('image/')) {
+      return res.status(415).json({ message: 'Art form cover upload must be an image.' });
+    }
 
     // Build the images array based on Multer upload or direct URL fallback
     let imageList = [];
@@ -57,8 +61,11 @@ export const requestArtForm = async (req, res) => {
       state,
       region,
       description,
+      historicalContext: historicalContext || '',
       images: imageList, // Matches 'images: [String]' in schema
-      isUnderrepresented: isUnderrepresented !== undefined ? Boolean(isUnderrepresented) : true,
+      isUnderrepresented: isUnderrepresented === undefined
+        ? true
+        : isUnderrepresented === true || isUnderrepresented === 'true',
       isApproved: false  // Matches 'isApproved: Boolean' in schema
     });
 

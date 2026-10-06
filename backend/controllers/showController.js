@@ -1,6 +1,7 @@
 import Show from '../models/Show.js';
 import Review from '../models/Review.js';
 import ArtForm from '../models/ArtForm.js';
+import { getMediaType } from '../utils/media.js';
 
 const SHOW_RETENTION_DAYS = 4;
 
@@ -58,9 +59,7 @@ export const createShow = async (req, res) => {
 
     const finalImageUrl = imageUrl || bannerUrl || '';
     const uploadedMediaUrl = req.file?.path || req.file?.secure_url || '';
-    const finalMediaType = req.file
-      ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
-      : mediaType || '';
+    const finalMediaType = req.file ? getMediaType(req.file) : mediaType || '';
     const expiresAt = new Date(showDate.getTime() + SHOW_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
     const newShow = await Show.create({
@@ -77,6 +76,7 @@ export const createShow = async (req, res) => {
       imageUrl: finalImageUrl,
       mediaUrl: uploadedMediaUrl,
       mediaType: finalMediaType,
+      mediaFileName: req.file?.originalname || '',
       expiresAt
     });
 
@@ -128,7 +128,11 @@ export const bookShowTickets = async (req, res) => {
 export const getShowReviews = async (req, res) => {
   try {
     const { id } = req.params;
-    const reviews = await Review.find({ showId: id }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ showId: id, moderationStatus: { $ne: 'hidden' } })
+      .populate('userId', 'name bio profilePhotoUrl')
+      .populate('replies.userId', 'name bio profilePhotoUrl')
+      .populate('replies.replies.userId', 'name bio profilePhotoUrl')
+      .sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -146,8 +150,8 @@ export const addShowReview = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: User authentication required.' });
     }
 
-    if (!comment && !imageUrl) {
-      return res.status(400).json({ message: 'Comment or image is required.' });
+    if (!comment && !imageUrl && !req.file) {
+      return res.status(400).json({ message: 'Add a comment or attach media.' });
     }
 
     const show = await Show.findById(req.params.id);
@@ -166,8 +170,9 @@ export const addShowReview = async (req, res) => {
       imageUrl: imageUrl || uploadedMediaUrl,
       mediaUrl: uploadedMediaUrl,
       mediaType: req.file
-        ? (req.file.mimetype?.startsWith('video/') ? 'video' : req.file.mimetype?.startsWith('audio/') ? 'audio' : 'image')
-        : mediaType || ''
+        ? getMediaType(req.file)
+        : mediaType || '',
+      mediaFileName: req.file?.originalname || ''
     });
 
     res.status(201).json({ message: 'Review added successfully.', review: newReview });
@@ -262,6 +267,87 @@ export const addNestedReply = async (req, res) => {
     res.status(201).json(review);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateShowReview = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) return res.status(404).json({ message: 'Comment not found.' });
+    if (String(review.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only edit your own comment.' });
+    const comment = String(req.body.comment || '').trim();
+    if (!comment && !review.mediaUrl && !review.imageUrl) return res.status(400).json({ message: 'Comment cannot be empty.' });
+    review.comment = comment;
+    review.editedAt = new Date();
+    await review.save();
+    res.json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteShowReview = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) return res.status(404).json({ message: 'Comment not found.' });
+    if (String(review.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only delete your own comment.' });
+    await review.deleteOne();
+    res.json({ deleted: true, reviewId: req.params.reviewId });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const findNestedReply = (replies, replyId) => {
+  for (const reply of replies || []) {
+    if (String(reply._id) === String(replyId)) return reply;
+    const nested = findNestedReply(reply.replies, replyId);
+    if (nested) return nested;
+  }
+  return null;
+};
+
+const removeNestedReply = (replies, replyId) => {
+  for (let index = 0; index < (replies || []).length; index += 1) {
+    if (String(replies[index]._id) === String(replyId)) {
+      replies.splice(index, 1);
+      return true;
+    }
+    if (removeNestedReply(replies[index].replies, replyId)) return true;
+  }
+  return false;
+};
+
+export const updateNestedReviewReply = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) return res.status(404).json({ message: 'Comment not found.' });
+    const reply = findNestedReply(review.replies, req.params.replyId);
+    if (!reply) return res.status(404).json({ message: 'Reply not found.' });
+    if (String(reply.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only edit your own reply.' });
+    const comment = String(req.body.comment || '').trim();
+    if (!comment) return res.status(400).json({ message: 'Reply cannot be empty.' });
+    reply.comment = comment;
+    reply.editedAt = new Date();
+    await review.save();
+    res.json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteNestedReviewReply = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) return res.status(404).json({ message: 'Comment not found.' });
+    const reply = findNestedReply(review.replies, req.params.replyId);
+    if (!reply) return res.status(404).json({ message: 'Reply not found.' });
+    if (String(reply.userId) !== String(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only delete your own reply.' });
+    removeNestedReply(review.replies, req.params.replyId);
+    await review.save();
+    res.json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

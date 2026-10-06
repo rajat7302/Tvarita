@@ -11,6 +11,9 @@ import RegisterPage from './pages/RegisterPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRoute from './components/AdminRoute';
+import MyTicketsPage from './pages/MyTicketsPage';
+import ChatPage from './pages/ChatPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 export default function App() {
   return (
@@ -25,6 +28,9 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/tickets" element={<MyTicketsPage />} />
+            <Route path="/friends" element={<ChatPage />} />
+            <Route path="/profile/:userId" element={<UserProfilePage />} />
 
             {/* Protected Admin Route */}
             <Route element={<AdminRoute />}>

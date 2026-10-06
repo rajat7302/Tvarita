@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { OAuth2Client } from 'google-auth-library';
+import { getMediaType } from '../utils/media.js';
 
 const PASSWORD_MIN_LENGTH = 8;
 const googleClient = new OAuth2Client();
@@ -25,7 +26,7 @@ const createResetUrl = (token) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, preferences, role, artistProfile } = req.body;
+    const { name, email, password, preferences, role, artistProfile, bio } = req.body;
     // Roles supplied by an unauthenticated client must never grant admin access.
     // Admin promotion is restricted to the protected admin workflow.
     const registrationRole = role === 'artist' ? 'artist' : 'user';
@@ -41,11 +42,13 @@ export const register = async (req, res) => {
 
     const user = await User.create({
       name,
+      bio: bio || '',
       email,
       password: hashedPassword,
       role: registrationRole,
       artistProfile: registrationRole === 'artist' ? artistProfile : undefined,
       isVerifiedArtist: false, // Remains false until admin approves
+      artistVerificationStatus: registrationRole === 'artist' ? 'pending' : 'none',
       preferences: preferences || []
     });
 
@@ -60,6 +63,8 @@ export const register = async (req, res) => {
       user: { 
         id: user._id, 
         name: user.name, 
+        profilePhotoUrl: user.profilePhotoUrl || '',
+        bio: user.bio,
         email: user.email, 
         role: user.role,
         artistProfile: user.artistProfile,
@@ -92,6 +97,8 @@ export const login = async (req, res) => {
       user: { 
         id: user._id, 
         name: user.name, 
+        profilePhotoUrl: user.profilePhotoUrl || '',
+        bio: user.bio,
         email: user.email, 
         role: user.role,
         artistProfile: user.artistProfile,
@@ -116,6 +123,7 @@ export const updateProfile = async (req, res) => {
 
    
     if (req.body.name) user.name = req.body.name;
+    if (req.body.bio !== undefined) user.bio = String(req.body.bio).trim().slice(0, 500);
 
     if (req.body.artistProfile) {
       if (user.role !== 'artist' && user.role !== 'admin') {
@@ -161,6 +169,23 @@ export const getProfile = async (req, res) => {
   }
 };
 
+export const updateProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file || getMediaType(req.file) !== 'image') {
+      return res.status(400).json({ message: 'Choose an image for your profile photo.' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { profilePhotoUrl: req.file.path || req.file.secure_url || '' } },
+      { new: true, runValidators: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    res.json({ message: 'Profile photo updated.', user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const loginWithGoogle = async (req, res) => {
   try {
     const credential = String(req.body.credential || '');
@@ -190,7 +215,7 @@ export const loginWithGoogle = async (req, res) => {
     res.json({
       token,
       user: {
-        id: user._id, name: user.name, email: user.email, role: user.role,
+        id: user._id, name: user.name, profilePhotoUrl: user.profilePhotoUrl || '', email: user.email, role: user.role, bio: user.bio,
         artistProfile: user.artistProfile, isVerifiedArtist: user.isVerifiedArtist,
         preferences: user.preferences
       }

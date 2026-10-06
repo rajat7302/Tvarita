@@ -1,29 +1,29 @@
 import React from 'react';
 import { HeartHandshake, MessageCircle } from 'lucide-react';
+import MediaAttachment from '../common/MediaAttachment';
+import { Link } from 'react-router-dom';
+import ImageLightbox from '../common/ImageLightbox';
 
 export default function ExperienceCard({ experience, onDiscuss }) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm">
       <div className="flex items-center gap-2 text-xs font-semibold text-amber-900 mb-2">
+        {experience.userId?.profilePhotoUrl && <ImageLightbox src={experience.userId.profilePhotoUrl} alt={`${experience.userId.name} profile photo`} className="h-6 w-6 shrink-0 rounded-full" imageClassName="h-full w-full rounded-full object-cover" />}
         <HeartHandshake className="w-4 h-4 text-[#E65100]" />
-        <span>Attendee Reflection by {experience.userId?.name || 'Anonymous Cultural Observer'}</span>
+        <span>Attendee Reflection by {experience.userId?._id ? <Link to={`/profile/${experience.userId._id}`} className="hover:underline">{experience.userId.name}</Link> : experience.userId?.name || 'Anonymous Cultural Observer'}</span>
       </div>
+      {experience.userId?.bio && <p className="mb-2 pl-6 text-xs text-gray-500">{experience.userId.bio}</p>}
 
       <p className="text-sm text-gray-800 italic bg-amber-50/40 p-3.5 rounded-xl border border-amber-100">
         "{experience.content}"
       </p>
 
-      {experience.mediaUrl && experience.mediaType === 'video' ? (
-        <video src={experience.mediaUrl} controls className="mt-3 h-40 w-full rounded-xl object-cover" />
-      ) : experience.mediaUrl && experience.mediaType === 'audio' ? (
-        <audio src={experience.mediaUrl} controls className="mt-3 w-full" />
-      ) : (experience.mediaUrl || experience.imageUrl) && (
-        <img 
-          src={experience.mediaUrl || experience.imageUrl} 
-          alt="User experience photograph" 
-          className="mt-3 rounded-xl h-40 w-full object-cover" 
-        />
-      )}
+      <MediaAttachment
+        url={experience.mediaUrl || experience.imageUrl}
+        type={experience.mediaType || 'image'}
+        name={experience.mediaFileName}
+        className="mt-3 h-40"
+      />
 
       <button
         onClick={() => onDiscuss?.(experience)}
